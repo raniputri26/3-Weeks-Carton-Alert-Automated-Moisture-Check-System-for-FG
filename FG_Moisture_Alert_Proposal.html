@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FG Moisture Alert System — Project Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f4ff;
+            --bg-white: #ffffff;
+            --bg-soft: #f7f9fc;
+            --text: #1a1f36;
+            --text-sec: #4a5578;
+            --text-muted: #8892b0;
+            --border: #e2e8f4;
+            --border-light: #edf2fa;
+
+            --blue: #4361ee;
+            --blue-light: #eef2ff;
+            --blue-vivid: #3a56e8;
+            --indigo: #6366f1;
+            --purple: #8b5cf6;
+            --violet: #a855f7;
+            --pink: #ec4899;
+            --rose: #f43f5e;
+            --red: #ef4444;
+            --orange: #f97316;
+            --amber: #f59e0b;
+            --yellow: #eab308;
+            --lime: #84cc16;
+            --green: #22c55e;
+            --emerald: #10b981;
+            --teal: #14b8a6;
+            --cyan: #06b6d4;
+            --sky: #0ea5e9;
+
+            --grad-hero: linear-gradient(135deg, #4361ee 0%, #7c3aed 40%, #ec4899 100%);
+            --grad-blue: linear-gradient(135deg, #4361ee, #06b6d4);
+            --grad-green: linear-gradient(135deg, #22c55e, #14b8a6);
+            --grad-orange: linear-gradient(135deg, #f97316, #f59e0b);
+            --grad-pink: linear-gradient(135deg, #ec4899, #8b5cf6);
+            --grad-red: linear-gradient(135deg, #ef4444, #f97316);
+            --grad-purple: linear-gradient(135deg, #8b5cf6, #6366f1);
+            --grad-cyan: linear-gradient(135deg, #06b6d4, #3b82f6);
+            --grad-sunset: linear-gradient(135deg, #f43f5e, #f97316, #eab308);
+
+            --shadow-sm: 0 1px 3px rgba(67,97,238,0.08);
+            --shadow-md: 0 4px 16px rgba(67,97,238,0.1);
+            --shadow-lg: 0 8px 30px rgba(67,97,238,0.12);
+            --shadow-xl: 0 16px 50px rgba(67,97,238,0.15);
+            --shadow-color: 0 8px 30px rgba(139,92,246,0.2);
+
+            --radius: 20px;
+            --radius-sm: 14px;
+            --radius-xs: 10px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @media print {
+            body { background: #fff; }
+            .hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .page-break { page-break-before: always; }
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: var(--grad-hero);
+            position: relative;
+            overflow: hidden;
+            padding: 70px 0 60px;
+            color: #fff;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 50%);
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--bg);
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+        /* Floating orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.3;
+            animation: orbFloat 15s ease-in-out infinite;
+        }
+        .orb-1 { width: 300px; height: 300px; background: #f43f5e; top: -80px; right: -50px; }
+        .orb-2 { width: 250px; height: 250px; background: #3b82f6; bottom: -60px; left: -40px; animation-delay: -5s; }
+        .orb-3 { width: 200px; height: 200px; background: #eab308; top: 30%; left: 60%; animation-delay: -10s; }
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(20px, -15px) scale(1.05); }
+            66% { transform: translate(-15px, 10px) scale(0.95); }
+        }
+        .hero-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+            z-index: 2;
+        }
+        .hero-logos {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .hero-logos img {
+            height: 42px;
+            filter: brightness(0) invert(1);
+            opacity: 0.95;
+        }
+        .hero-logos .divider {
+            width: 2px;
+            height: 32px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 1px;
+        }
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 640px;
+            font-weight: 400;
+            line-height: 1.7;
+        }
+        .hero-badges {
+            display: flex;
+            gap: 10px;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* ===== TOC ===== */
+        .toc {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 36px;
+            margin: -20px 0 40px;
+            position: relative;
+            z-index: 3;
+            box-shadow: var(--shadow-lg);
+        }
+        .toc-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--blue);
+            margin-bottom: 18px;
+        }
+        .toc-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 30px;
+        }
+        .toc-list a {
+            color: var(--text-sec);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .toc-list a:hover {
+            background: var(--blue-light);
+            color: var(--blue);
+            transform: translateX(4px);
+        }
+        .toc-num {
+            background: var(--grad-hero);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ===== SECTION ===== */
+        .section {
+            padding: 45px 0;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            color: #fff;
+        }
+        .section-icon.blue { background: var(--grad-blue); }
+        .section-icon.green { background: var(--grad-green); }
+        .section-icon.orange { background: var(--grad-orange); }
+        .section-icon.pink { background: var(--grad-pink); }
+        .section-icon.purple { background: var(--grad-purple); }
+        .section-icon.cyan { background: var(--grad-cyan); }
+        .section-icon.red { background: var(--grad-red); }
+        .section-icon.sunset { background: var(--grad-sunset); }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text);
+        }
+        .section-desc {
+            color: var(--text-sec);
+            font-size: 0.95rem;
+            margin-bottom: 28px;
+            max-width: 800px;
+            padding-left: 66px;
+        }
+        .section-divider {
+            height: 3px;
+            background: linear-gradient(to right, var(--blue), var(--purple), var(--pink), transparent);
+            border-radius: 2px;
+            margin: 45px 0 0;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 30px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            border-radius: var(--radius-sm);
+            padding: 24px 20px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-4px) scale(1.02); }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+        }
+        .stat-card.c1 { background: var(--grad-blue); }
+        .stat-card.c2 { background: var(--grad-green); }
+        .stat-card.c3 { background: var(--grad-orange); }
+        .stat-card.c4 { background: var(--grad-purple); }
+        .stat-card.c5 { background: var(--grad-cyan); }
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            position: relative;
+        }
+        .stat-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.85;
+            margin-top: 4px;
+            font-weight: 600;
+            position: relative;
+        }
+
+        /* ===== TABLE ===== */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        thead th {
+            background: linear-gradient(135deg, #4361ee10, #8b5cf610);
+            padding: 13px 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--blue-vivid);
+            border-bottom: 2px solid var(--border);
+        }
+        tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-sec);
+        }
+        tbody tr:hover td { background: #f8faff; }
+        tbody tr:last-child td { border-bottom: none; }
+        .td-bold { font-weight: 700; color: var(--text); }
+
+        /* ===== BADGE ===== */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge.blue { background: #eef2ff; color: var(--blue); }
+        .badge.green { background: #ecfdf5; color: var(--emerald); }
+        .badge.orange { background: #fff7ed; color: var(--orange); }
+        .badge.red { background: #fef2f2; color: var(--red); }
+        .badge.purple { background: #faf5ff; color: var(--purple); }
+        .badge.pink { background: #fdf2f8; color: var(--pink); }
+        .badge.gray { background: #f1f5f9; color: #64748b; }
+        .badge.cyan { background: #ecfeff; color: var(--teal); }
+
+        /* ===== FLOW STEPS ===== */
+        .flow-steps { display: flex; flex-direction: column; gap: 0; }
+        .flow-step {
+            display: flex;
+            gap: 18px;
+            position: relative;
+            padding-bottom: 28px;
+        }
+        .flow-step:last-child { padding-bottom: 0; }
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            left: 21px;
+            top: 48px;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--border), transparent);
+            border-radius: 2px;
+        }
+        .flow-step:last-child::before { display: none; }
+        .flow-num {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #fff;
+            flex-shrink: 0;
+            z-index: 1;
+            box-shadow: var(--shadow-md);
+        }
+        .flow-num.blue { background: var(--grad-blue); }
+        .flow-num.green { background: var(--grad-green); }
+        .flow-num.orange { background: var(--grad-orange); }
+        .flow-num.purple { background: var(--grad-purple); }
+        .flow-num.pink { background: var(--grad-pink); }
+        .flow-body { flex: 1; padding-top: 8px; }
+        .flow-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+        .flow-desc { color: var(--text-sec); font-size: 0.88rem; margin-top: 4px; }
+
+        /* ===== CALLOUT ===== */
+        .callout {
+            border-radius: var(--radius-sm);
+            padding: 18px 22px;
+            margin: 16px 0;
+            display: flex;
+            gap: 14px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+        }
+        .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+        .callout.info {
+            background: #eef2ff;
+            border-left-color: var(--blue);
+            color: #3730a3;
+        }
+        .callout.success {
+            background: #ecfdf5;
+            border-left-color: var(--emerald);
+            color: #065f46;
+        }
+        .callout.warning {
+            background: #fffbeb;
+            border-left-color: var(--amber);
+            color: #92400e;
+        }
+        .callout.danger {
+            background: #fef2f2;
+            border-left-color: var(--red);
+            color: #991b1b;
+        }
+
+        /* ===== WA PREVIEW ===== */
+        .wa-preview {
+            background: #e5ddd5;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L35 15 L30 25 L25 15Z' fill='%23d4cbc1' opacity='0.3'/%3E%3C/svg%3E");
+            border-radius: var(--radius);
+            padding: 20px;
+            max-width: 460px;
+            border: 1px solid #c7bfb3;
+            box-shadow: var(--shadow-md);
+        }
+        .wa-header-bar {
+            background: #075e54;
+            margin: -20px -20px 16px -20px;
+            padding: 14px 18px;
+            border-radius: var(--radius) var(--radius) 0 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+        }
+        .wa-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25d366, #128c7e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .wa-group-name { font-size: 0.9rem; font-weight: 600; }
+        .wa-group-sub { font-size: 0.7rem; opacity: 0.7; }
+        .wa-bubble {
+            background: #dcf8c6;
+            border-radius: 0 10px 10px 10px;
+            padding: 12px 14px;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: #303030;
+            white-space: pre-line;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .wa-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 8px 10px 0;
+            border-color: transparent #dcf8c6 transparent transparent;
+        }
+        .wa-bubble b { color: #1a1a1a; }
+        .wa-time {
+            text-align: right;
+            font-size: 0.68rem;
+            color: #7d8e7d;
+            margin-top: 4px;
+        }
+
+        /* ===== HIGHLIGHT BOX ===== */
+        .highlight-box {
+            background: linear-gradient(135deg, #eef2ff, #faf5ff, #fdf2f8);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+        .param-grid {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+        }
+        .param-key {
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-light);
+            background: rgba(67,97,238,0.03);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .param-val {
+            padding: 14px 20px;
+            font-size: 0.88rem;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-sec);
+        }
+
+        /* ===== ARCH BOXES ===== */
+        .arch-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        .arch-col { display: flex; flex-direction: column; gap: 12px; }
+        .arch-col-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .arch-box {
+            border-radius: var(--radius-sm);
+            padding: 18px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #fff;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s;
+        }
+        .arch-box:hover { transform: translateY(-3px); }
+        .arch-box .arch-icon { font-size: 1.5rem; margin-bottom: 6px; display: block; }
+        .arch-box .arch-sub { font-size: 0.72rem; opacity: 0.85; margin-top: 4px; display: block; font-weight: 400; }
+        .arch-box.ab1 { background: var(--grad-blue); }
+        .arch-box.ab2 { background: var(--grad-purple); }
+        .arch-box.ab3 { background: var(--grad-orange); }
+        .arch-box.ab4 { background: var(--grad-red); }
+        .arch-box.ab5 { background: var(--grad-cyan); }
+        .arch-box.ab6 { background: var(--grad-green); }
+        .arch-box.ab7 { background: var(--grad-pink); }
+
+        /* ===== GRIDS ===== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        /* ===== CODE BLOCK ===== */
+        .code-block {
+            background: #1e1e2e;
+            border-radius: var(--radius-sm);
+            padding: 22px 26px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.8rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            color: #cdd6f4;
+            box-shadow: var(--shadow-lg);
+        }
+        .code-block .cm { color: #6c7086; }
+        .code-block .kw { color: #cba6f7; }
+        .code-block .st { color: #a6e3a1; }
+        .code-block .fn { color: #89b4fa; }
+
+        /* ===== PROJECT TREE ===== */
+        .project-tree {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            line-height: 2;
+        }
+        .project-tree .fo { color: var(--blue); font-weight: 700; }
+        .project-tree .fi { color: var(--text-sec); }
+        .project-tree .ds { color: var(--text-muted); font-style: italic; font-size: 0.78rem; }
+
+        /* ===== TIMELINE ===== */
+        .timeline { position: relative; padding-left: 32px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 9px;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            border-radius: 2px;
+        }
+        .timeline.tl-blue::before { background: linear-gradient(to bottom, var(--blue), var(--cyan)); }
+        .timeline.tl-purple::before { background: linear-gradient(to bottom, var(--purple), var(--pink)); }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 18px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 7px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: #fff;
+        }
+        .timeline-item.ti-blue::before { border-color: var(--blue); }
+        .timeline-item.ti-green::before { border-color: var(--green); }
+        .timeline-item.ti-orange::before { border-color: var(--orange); }
+        .timeline-item.ti-red::before { border-color: var(--red); }
+        .timeline-item.ti-purple::before { border-color: var(--purple); }
+        .timeline-item.ti-pink::before { border-color: var(--pink); }
+        .timeline-title { font-weight: 700; font-size: 0.95rem; }
+        .timeline-desc { color: var(--text-sec); font-size: 0.83rem; margin-top: 2px; }
+
+        /* ===== RISK ===== */
+        .risk-meter { display: flex; align-items: center; gap: 6px; }
+        .risk-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .risk-dot.low { background: var(--green); }
+        .risk-dot.med { background: var(--amber); }
+
+        /* ===== DASH MOCK ===== */
+        .dash-mock {
+            background: var(--bg-white);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+        }
+        .dash-titlebar {
+            background: linear-gradient(135deg, #f8fafc, #eef2ff);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .dash-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dash-dot.r { background: #ff5f57; }
+        .dash-dot.y { background: #febc2e; }
+        .dash-dot.g { background: #28c840; }
+        .dash-url {
+            flex: 1;
+            text-align: center;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: #fff;
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .dash-body { padding: 20px; background: var(--bg); }
+        .dash-stats-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .dash-stat-card {
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: #fff;
+        }
+        .dash-stat-card.ds1 { background: var(--grad-blue); }
+        .dash-stat-card.ds2 { background: var(--grad-cyan); }
+        .dash-stat-card.ds3 { background: var(--grad-orange); }
+        .dash-stat-card.ds4 { background: var(--grad-green); }
+        .dash-stat-card.ds5 { background: var(--grad-red); }
+        .ds-val { font-family:'Outfit'; font-size:1.5rem; font-weight:900; }
+        .ds-lbl { font-size:0.65rem; text-transform:uppercase; letter-spacing:0.08em; opacity:0.85; margin-top:2px; }
+        .dash-table-wrap {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .dash-table-wrap table { font-size: 0.78rem; }
+        .dash-table-wrap thead th { font-size: 0.68rem; padding: 10px 14px; }
+        .dash-table-wrap tbody td { padding: 10px 14px; }
+
+        /* ===== FEATURE CARD ===== */
+        .feature-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            box-shadow: var(--shadow-color);
+            transform: translateY(-4px);
+            border-color: rgba(139,92,246,0.3);
+        }
+        .feature-emoji { font-size: 2.4rem; margin-bottom: 12px; }
+        .feature-title { font-family:'Outfit'; font-weight:700; font-size:1rem; margin-bottom:6px; }
+        .feature-desc { color:var(--text-sec); font-size:0.82rem; }
+
+        /* ===== SECURITY BLOCK ===== */
+        .security-block {
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 2px solid #bbf7d0;
+            border-radius: var(--radius);
+            padding: 24px;
+            font-family: monospace;
+            font-size: 0.84rem;
+            line-height: 2;
+            color: #166534;
+        }
+        .sec-safe { color: #16a34a; font-weight: 700; }
+        .sec-warn { color: #ea580c; font-weight: 700; }
+        .sec-dim { color: #86efac; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            padding: 40px 0;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.82rem;
+            margin-top: 20px;
+        }
+        .footer strong { color: #fff; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .container { padding: 0 20px; }
+            .grid-2, .grid-3, .arch-grid { grid-template-columns: 1fr; }
+            .stats-grid, .dash-stats-row { grid-template-columns: repeat(2, 1fr); }
+            .toc-list { grid-template-columns: 1fr; }
+            .param-grid { grid-template-columns: 1fr; }
+            .section-desc { padding-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="hero-content">
+        <div class="hero-logos">
+            <img src="img/NB.png" alt="New Balance" onerror="this.style.display='none'">
+            <div class="divider"></div>
+            <img src="img/Parkland.png" alt="Parkland" onerror="this.style.display='none'">
+        </div>
+        <h1>FG Moisture Alert<br>System</h1>
+        <p class="hero-subtitle">
+            Sistem alert otomatis pengecekan moisture Finish Good setelah 3 minggu penyimpanan, 
+            dengan notifikasi WhatsApp Group dan dashboard monitoring real-time.
+        </p>
+        <div class="hero-badges">
+            <span class="hero-badge">📋 Project Proposal</span>
+            <span class="hero-badge">🏭 Parkland Factory</span>
+            <span class="hero-badge">📅 6 Agustus 2026</span>
+            <span class="hero-badge">🏷️ Version 1.0</span>
+        </div>
+    </div>
+</header>
+
+<!-- ===== TOC ===== -->
+<div class="container">
+    <div class="toc">
+        <div class="toc-title">📑 Daftar Isi</div>
+        <ul class="toc-list">
+            <li><a href="#s1"><span class="toc-num">01</span> Latar Belakang & Problem</a></li>
+            <li><a href="#s2"><span class="toc-num">02</span> Analisis Data</a></li>
+            <li><a href="#s3"><span class="toc-num">03</span> Parameter Sistem</a></li>
+            <li><a href="#s4"><span class="toc-num">04</span> Arsitektur Sistem</a></li>
+            <li><a href="#s5"><span class="toc-num">05</span> Alur Kerja & Logika</a></li>
+            <li><a href="#s6"><span class="toc-num">06</span> WhatsApp & Fonnte</a></li>
+            <li><a href="#s7"><span class="toc-num">07</span> Format Notifikasi</a></li>
+            <li><a href="#s8"><span class="toc-num">08</span> Dashboard Monitoring</a></li>
+            <li><a href="#s9"><span class="toc-num">09</span> Tech Stack & Struktur</a></li>
+            <li><a href="#s10"><span class="toc-num">10</span> Roadmap Implementasi</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ===== 01. LATAR BELAKANG ===== -->
+<div class="container">
+<section class="section" id="s1">
+    <div class="section-header">
+        <div class="section-icon blue">📋</div>
+        <h2 class="section-title">Latar Belakang & Problem Statement</h2>
+    </div>
+    <p class="section-desc">
+        Finish Good (FG) yang disimpan terlalu lama di gudang berisiko mengalami peningkatan moisture 
+        yang dapat mempengaruhi kualitas produk. Saat ini tidak ada sistem otomatis untuk mengingatkan 
+        tim Quality Control.
+    </p>
+    <div class="grid-2">
+        <div class="card" style="border-left: 4px solid var(--red);">
+            <div class="card-title">❌ Kondisi Saat Ini</div>
+            <ul style="color:var(--text-sec);font-size:0.9rem;padding-left:20px;">
+                <li style="margin-bottom:10px">Pengecekan moisture dilakukan manual tanpa reminder</li>
+                <li style="margin-bottom:10px">Tidak ada tracking PO mana yang sudah/belum di-check</li>
+                <li style="margin-bottom:10px">Risiko terlewat PO yang sudah lama di gudang</li>
+                <li>Data hanya di Excel tanpa alert system</li>
+            </ul>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--green);">
+            <div class="card-title">✅ Solusi yang Diusulkan</div>
+            <ul style="color:var(--text-sec);font-size:0.9rem;padding-left:20px;">
+                <li style="margin-bottom:10px">Alert otomatis ke WA Group saat PO sudah 3 minggu di FG</li>
+                <li style="margin-bottom:10px">Dashboard monitoring status pengecekan moisture</li>
+                <li style="margin-bottom:10px">Reminder otomatis jika belum di-check dalam 3 hari</li>
+                <li>Pencatatan hasil moisture check dengan threshold otomatis</li>
+            </ul>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 02. ANALISIS DATA ===== -->
+<section class="section" id="s2">
+    <div class="section-header">
+        <div class="section-icon cyan">📊</div>
+        <h2 class="section-title">Analisis Data</h2>
+    </div>
+    <p class="section-desc">
+        Data bersumber dari file <strong>FG First Carton Tracking.xlsx</strong> sheet 
+        <strong>"090034 FG In Scan History"</strong>.
+    </p>
+
+    <div class="stats-grid">
+        <div class="stat-card c1"><div class="stat-value">5,998</div><div class="stat-label">Total Records</div></div>
+        <div class="stat-card c2"><div class="stat-value">250</div><div class="stat-label">Unique PO</div></div>
+        <div class="stat-card c3"><div class="stat-value">10+</div><div class="stat-label">Markets</div></div>
+        <div class="stat-card c4"><div class="stat-value">10+</div><div class="stat-label">Warehouses</div></div>
+        <div class="stat-card c5"><div class="stat-value">2 bln</div><div class="stat-label">Range Data</div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📄 Struktur Kolom Excel</div>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>Kolom</th><th>Contoh Data</th><th>Keterangan</th></tr></thead>
+            <tbody>
+                <tr><td class="td-bold">ARTICLE</td><td>M997H2HN-D</td><td>Kode artikel sepatu</td></tr>
+                <tr><td class="td-bold">PO</td><td>7865039</td><td>Nomor Purchase Order</td></tr>
+                <tr><td class="td-bold">MARKET</td><td>UNITED KINGDOM</td><td>Negara tujuan</td></tr>
+                <tr><td class="td-bold">CUSTOMER</td><td>DSV SOLUTIONS LTD</td><td>Nama customer</td></tr>
+                <tr><td class="td-bold">WAREHOUSE</td><td>Factory Outlet Stock (UZ)</td><td>Gudang penyimpanan</td></tr>
+                <tr><td class="td-bold">QTY ORDER</td><td>1,092</td><td>Jumlah order (pairs)</td></tr>
+                <tr><td class="td-bold">START IN FG</td><td>2026-08-04</td><td>Tanggal masuk FG</td></tr>
+                <tr style="background:linear-gradient(90deg,#eef2ff,#faf5ff)">
+                    <td style="font-weight:800;color:var(--blue)">⭐ SI DATE</td>
+                    <td style="color:var(--blue);font-weight:600">2026-08-05</td>
+                    <td style="color:var(--blue);font-weight:600">📌 Trigger utama — tanggal SI (countdown mulai dari sini)</td>
+                </tr>
+                <tr><td class="td-bold">NO. CTN</td><td>58</td><td>Nomor karton</td></tr>
+                <tr><td class="td-bold">SCAN DATE</td><td>2026-08-04 14:44</td><td>Waktu scan carton</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="callout info" style="margin-top:16px;">
+            <span class="callout-icon">📊</span>
+            <div><strong>Data Facts:</strong> 133 dari 250 PO sudah memiliki SI DATE. 117 PO masih kosong (WAITING FOR SI).</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-title">🌍 Top 5 Markets</div>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Market</th><th style="text-align:right">Records</th></tr></thead>
+                <tbody>
+                    <tr><td>🇺🇸 United States</td><td style="text-align:right;font-weight:700">3,573</td></tr>
+                    <tr><td>🇳🇱 Netherlands</td><td style="text-align:right;font-weight:700">461</td></tr>
+                    <tr><td>🇰🇷 Korea</td><td style="text-align:right;font-weight:700">286</td></tr>
+                    <tr><td>🇦🇺 Australia</td><td style="text-align:right;font-weight:700">232</td></tr>
+                    <tr><td>🇨🇳 China</td><td style="text-align:right;font-weight:700">196</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">🏪 Top 5 Customers</div>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Customer</th><th style="text-align:right">Records</th></tr></thead>
+                <tbody>
+                    <tr><td>NEW BALANCE ATHLETICS, INC.</td><td style="text-align:right;font-weight:700">1,101</td></tr>
+                    <tr><td>DSV VENLO</td><td style="text-align:right;font-weight:700">425</td></tr>
+                    <tr><td>FINISHLINE - MACY'S</td><td style="text-align:right;font-weight:700">404</td></tr>
+                    <tr><td>ELAND WORLD LTD.</td><td style="text-align:right;font-weight:700">286</td></tr>
+                    <tr><td>NEW BALANCE C/O</td><td style="text-align:right;font-weight:700">232</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 03. PARAMETER ===== -->
+<section class="section" id="s3">
+    <div class="section-header">
+        <div class="section-icon green">⚙️</div>
+        <h2 class="section-title">Parameter & Keputusan Sistem</h2>
+    </div>
+    <p class="section-desc">Semua parameter berikut sudah disetujui dan siap untuk implementasi.</p>
+
+    <div class="highlight-box">
+        <div class="param-grid">
+            <div class="param-key">🔔 Alert Trigger</div>
+            <div class="param-val">PO usia ≥ <strong>21 hari (3 minggu)</strong> sejak SI DATE</div>
+            <div class="param-key">⏳ SI DATE Kosong</div>
+            <div class="param-val">Status <strong>WAITING FOR SI</strong> — belum mulai countdown</div>
+            <div class="param-key">💧 Moisture Threshold</div>
+            <div class="param-val">≥ <strong style="color:var(--red)">15% = FAIL ❌</strong> &nbsp;|&nbsp; &lt; <strong style="color:var(--green)">15% = PASS ✅</strong></div>
+            <div class="param-key">🔄 Reminder</div>
+            <div class="param-val"><strong>3 hari</strong> setelah alert pertama jika belum di-check</div>
+            <div class="param-key">⏰ Jadwal Alert</div>
+            <div class="param-val">Setiap hari jam <strong>08:00 WIB</strong></div>
+            <div class="param-key">🚫 Cutoff Rule</div>
+            <div class="param-val">PO lama yang sudah lewat 3 minggu saat sistem pertama jalan → <strong>SKIP</strong></div>
+            <div class="param-key">📁 Upload Data</div>
+            <div class="param-val"><strong>Manual</strong> via dashboard (upload file Excel)</div>
+            <div class="param-key">🔁 Deduplication</div>
+            <div class="param-val">Skip row yang <strong>PO + NO.CTN</strong> sudah ada di database</div>
+            <div class="param-key">📱 WA Gateway</div>
+            <div class="param-val"><strong>Fonnte</strong> — Free plan (1.000 pesan/bulan)</div>
+            <div class="param-key">📞 Nomor WA</div>
+            <div class="param-val"><strong>Nomor baru</strong> (SIM card khusus robot, Rp 5-10rb)</div>
+            <div class="param-key">🌐 Akses Dashboard</div>
+            <div class="param-val"><strong>Beberapa PC</strong> dalam 1 jaringan internal (via IP)</div>
+            <div class="param-key">📋 Scope PO</div>
+            <div class="param-val"><strong>Semua PO</strong> tanpa filter warehouse/market</div>
+            <div class="param-key" style="border-bottom:none">💰 Biaya</div>
+            <div class="param-val" style="border-bottom:none"><span class="badge green" style="font-size:0.85rem;padding:6px 16px;">Rp 0 — GRATIS</span></div>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 04. ARSITEKTUR ===== -->
+<section class="section" id="s4">
+    <div class="section-header">
+        <div class="section-icon purple">🏗️</div>
+        <h2 class="section-title">Arsitektur Sistem</h2>
+    </div>
+    <p class="section-desc">Aliran data dari input (Excel) → processing (backend) → output (WhatsApp + Dashboard).</p>
+
+    <div class="card">
+        <div class="arch-grid">
+            <div class="arch-col">
+                <div class="arch-col-title">📥 Input</div>
+                <div class="arch-box ab1">
+                    <span class="arch-icon">📊</span>Excel Upload
+                    <span class="arch-sub">FG First Carton Tracking.xlsx</span>
+                </div>
+                <div class="arch-box ab7">
+                    <span class="arch-icon">✅</span>Moisture Check
+                    <span class="arch-sub">Input via Dashboard Form</span>
+                </div>
+            </div>
+            <div class="arch-col">
+                <div class="arch-col-title">⚙️ Backend (Node.js)</div>
+                <div class="arch-box ab2">
+                    <span class="arch-icon">📁</span>Excel Parser + Dedup
+                    <span class="arch-sub">Parse & skip existing data</span>
+                </div>
+                <div class="arch-box ab3">
+                    <span class="arch-icon">⏰</span>Cron Scheduler
+                    <span class="arch-sub">Daily 08:00 WIB trigger</span>
+                </div>
+                <div class="arch-box ab4">
+                    <span class="arch-icon">🔍</span>Alert + Reminder Engine
+                    <span class="arch-sub">21-day from SI alert & 3-day reminder</span>
+                </div>
+                <div class="arch-box ab5">
+                    <span class="arch-icon">🗄️</span>SQLite Database
+                    <span class="arch-sub">Local file-based storage</span>
+                </div>
+            </div>
+            <div class="arch-col">
+                <div class="arch-col-title">📤 Output</div>
+                <div class="arch-box ab6">
+                    <span class="arch-icon">📱</span>WhatsApp Group
+                    <span class="arch-sub">Via Fonnte API (gratis)</span>
+                </div>
+                <div class="arch-box ab1">
+                    <span class="arch-icon">📊</span>Web Dashboard
+                    <span class="arch-sub">http://192.168.x.x:3000</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 05. ALUR KERJA ===== -->
+<section class="section" id="s5">
+    <div class="section-header">
+        <div class="section-icon orange">🔄</div>
+        <h2 class="section-title">Alur Kerja & Logika</h2>
+    </div>
+
+    <div class="card" style="border-top:4px solid var(--blue);">
+        <div class="card-title">📁 Upload & Deduplication</div>
+        <p style="color:var(--text-sec);font-size:0.9rem;margin-bottom:18px;">
+            Data yang sudah pernah di-upload akan otomatis di-skip berdasarkan 
+            <span class="badge blue">PO Number</span> + <span class="badge blue">No. Carton</span>.
+        </p>
+        <div class="flow-steps">
+            <div class="flow-step"><div class="flow-num blue">1</div><div class="flow-body"><div class="flow-title">Upload Excel via Dashboard</div><div class="flow-desc">Operator upload file .xlsx melalui tombol di dashboard</div></div></div>
+            <div class="flow-step"><div class="flow-num blue">2</div><div class="flow-body"><div class="flow-title">Parse Setiap Row</div><div class="flow-desc">Sistem membaca sheet "090034 FG In Scan History" baris per baris</div></div></div>
+            <div class="flow-step"><div class="flow-num orange">3</div><div class="flow-body"><div class="flow-title">Cek Duplikat</div><div class="flow-desc">PO + NO.CTN sudah ada → <strong>SKIP</strong> &nbsp;|&nbsp; Belum ada → <strong>INSERT</strong></div></div></div>
+            <div class="flow-step"><div class="flow-num green">4</div><div class="flow-body"><div class="flow-title">Hasil Upload</div><div class="flow-desc">"Upload selesai — 120 rows baru ditambahkan, 5.878 rows di-skip"</div></div></div>
+        </div>
+    </div>
+
+    <div class="card" style="border-top:4px solid var(--purple);">
+        <div class="card-title">🚫 Cutoff — PO Lama Saat Sistem Baru Jalan</div>
+        <p style="color:var(--text-sec);font-size:0.9rem;margin-bottom:16px;">
+            PO yang sudah lewat 3 minggu dari SI DATE saat sistem pertama kali jalan langsung di-mark <span class="badge gray">SKIPPED</span> — tidak ada alert spam.
+        </p>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>PO</th><th>SI DATE</th><th>Usia</th><th>Status</th><th>Keterangan</th></tr></thead>
+            <tbody>
+                <tr><td class="td-bold">7866450</td><td>28 Jul 2026</td><td>9 hari</td><td><span class="badge blue">⏳ WATCHING</span></td><td>Alert di 18 Aug</td></tr>
+                <tr><td class="td-bold">7865046</td><td>27 Jul 2026</td><td>10 hari</td><td><span class="badge blue">⏳ WATCHING</span></td><td>Alert di 17 Aug</td></tr>
+                <tr><td class="td-bold">7868xxx</td><td>10 Jul 2026</td><td>27 hari</td><td><span class="badge gray">🚫 SKIPPED</span></td><td>Lewat saat sistem mulai</td></tr>
+                <tr><td class="td-bold">7869xxx</td><td>01 Jul 2026</td><td>36 hari</td><td><span class="badge gray">🚫 SKIPPED</span></td><td>Lewat saat sistem mulai</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="card" style="border-top:4px solid var(--cyan);">
+        <div class="card-title">⏳ Logika Pengisian SI DATE</div>
+        <div class="flow-steps">
+            <div class="flow-step"><div class="flow-num cyan">1</div><div class="flow-body"><div class="flow-title">Upload Excel</div><div class="flow-desc">Sistem mengecek kolom SI DATE pada setiap PO</div></div></div>
+            <div class="flow-step"><div class="flow-num orange">2</div><div class="flow-body"><div class="flow-title">Cek SI DATE Kosong?</div><div class="flow-desc">YA → Status <strong>WAITING FOR SI</strong> &nbsp;|&nbsp; TIDAK → Mulai countdown</div></div></div>
+            <div class="flow-step"><div class="flow-num green">3</div><div class="flow-body"><div class="flow-title">Upload Excel Berikutnya</div><div class="flow-desc">Jika SI DATE kini terisi → Update PO & mulai countdown dari tanggal SI tersebut</div></div></div>
+        </div>
+    </div>
+
+    <div class="card" style="border-top:4px solid var(--green);">
+        <div class="card-title">🔔 Alert Harian (08:00 WIB)</div>
+        <div class="flow-steps">
+            <div class="flow-step"><div class="flow-num blue">1</div><div class="flow-body"><div class="flow-title">Cron Job Trigger — 08:00 WIB</div><div class="flow-desc">Scheduler otomatis setiap pagi</div></div></div>
+            <div class="flow-step"><div class="flow-num orange">2</div><div class="flow-body"><div class="flow-title">Scan PO — Hitung usia dari SI</div><div class="flow-desc">Hari ini − SI DATE ≥ 21 hari?</div></div></div>
+            <div class="flow-step"><div class="flow-num green">3</div><div class="flow-body"><div class="flow-title">Kirim Alert WA</div><div class="flow-desc">Notifikasi ke WA Group via Fonnte dengan detail PO + nomor carton</div></div></div>
+            <div class="flow-step"><div class="flow-num pink">4</div><div class="flow-body"><div class="flow-title">Cek Reminder</div><div class="flow-desc">PO sudah di-alert tapi belum di-check ≥ 3 hari → kirim reminder</div></div></div>
+        </div>
+    </div>
+
+    <div class="card" style="border-top:4px solid var(--amber);">
+        <div class="card-title">📊 Lifecycle Status PO</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0;">
+            <span class="badge gray" style="font-size:0.88rem;padding:10px 18px;">⏳ WAITING FOR SI</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span style="font-size:0.78rem;color:var(--text-sec)">SI DATE terisi</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span class="badge blue" style="font-size:0.88rem;padding:10px 18px;">⏳ WATCHING</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span style="font-size:0.78rem;color:var(--text-sec)">21 hari</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span class="badge orange" style="font-size:0.88rem;padding:10px 18px;">🔔 ALERTED</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span style="font-size:0.78rem;color:var(--text-sec)">check moisture</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span class="badge green" style="font-size:0.88rem;padding:10px 18px;">✅ CHECKED</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0;">
+            <span class="badge orange" style="font-size:0.88rem;padding:10px 18px;">🔔 ALERTED</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span style="font-size:0.78rem;color:var(--text-sec)">3 hari tanpa check</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span class="badge red" style="font-size:0.88rem;padding:10px 18px;">❌ OVERDUE</span>
+            <span style="color:var(--text-muted);font-size:1.2rem;">→</span>
+            <span style="font-size:0.78rem;color:var(--text-sec)">kirim reminder</span>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 06. WA & FONNTE ===== -->
+<section class="section" id="s6">
+    <div class="section-header">
+        <div class="section-icon green">📱</div>
+        <h2 class="section-title">WhatsApp Group & Fonnte</h2>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-title">📋 Tentang Fonnte</div>
+            <p style="color:var(--text-sec);font-size:0.88rem;margin-bottom:14px;">
+                WhatsApp Gateway Indonesia — REST API untuk kirim pesan WA otomatis.
+            </p>
+            <div class="table-wrap">
+            <table>
+                <tbody>
+                    <tr><td class="td-bold">Tipe</td><td>Unofficial WA API</td></tr>
+                    <tr><td class="td-bold">Free Plan</td><td>1.000 pesan/bulan <span class="badge green">Gratis</span></td></tr>
+                    <tr><td class="td-bold">Group Support</td><td>✅ Didukung</td></tr>
+                    <tr><td class="td-bold">API</td><td>REST API (POST)</td></tr>
+                    <tr><td class="td-bold">Website</td><td><a href="https://fonnte.com" style="color:var(--blue);font-weight:600;">fonnte.com</a></td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">💰 Estimasi Biaya Bulanan</div>
+            <div class="callout success">
+                <span class="callout-icon">✅</span>
+                <div><strong>Free plan CUKUP!</strong> Estimasi ~250 pesan/bulan, kuota 1.000. Margin 4x lipat.</div>
+            </div>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Item</th><th style="text-align:right">Pesan/bln</th></tr></thead>
+                <tbody>
+                    <tr><td>Alert pertama (~125 PO)</td><td style="text-align:right">~125</td></tr>
+                    <tr><td>Reminder (estimasi 40%)</td><td style="text-align:right">~50</td></tr>
+                    <tr><td class="td-bold">Total</td><td style="text-align:right;font-weight:800;color:var(--emerald)">~175-250</td></tr>
+                    <tr><td class="td-bold">Biaya</td><td style="text-align:right"><span class="badge green" style="font-size:0.85rem">Rp 0</span></td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;border-top:4px solid var(--green);">
+        <div class="card-title">🔒 Keamanan Nomor dalam WA Group</div>
+        <div class="callout info" style="margin-bottom:18px;">
+            <span class="callout-icon">💡</span>
+            <div><strong>Hanya nomor yang ter-connect ke Fonnte (nomor robot) yang berisiko.</strong> Nomor personal tim di grup 100% aman.</div>
+        </div>
+        <div class="security-block">
+            <div style="margin-bottom:6px;color:#065f46;font-weight:700;">WA Group "FG Moisture Alert"</div>
+            ├── 👤 Manager (personal) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ <span class="sec-safe">AMAN ✅</span> member biasa<br>
+            ├── 👤 Staff QC 1 (personal) &nbsp;&nbsp;&nbsp;→ <span class="sec-safe">AMAN ✅</span> member biasa<br>
+            ├── 👤 Staff QC 2 (personal) &nbsp;&nbsp;&nbsp;→ <span class="sec-safe">AMAN ✅</span> member biasa<br>
+            ├── 👤 Supervisor (personal) &nbsp;&nbsp;&nbsp;→ <span class="sec-safe">AMAN ✅</span> member biasa<br>
+            └── 🤖 Nomor Robot (SIM baru) &nbsp;&nbsp;→ <span class="sec-warn">RISIKO ⚠️</span> connected to Fonnte<br>
+            <div style="margin-top:8px;margin-left:30px;color:#15803d;font-size:0.8rem;">↑ Jika ban: beli SIM baru (Rp 5-10rb) → connect ulang → invite ke grup → selesai</div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <div class="card-title">⚠️ Analisis Risiko</div>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>Risiko</th><th>Level</th><th>Mitigasi</th></tr></thead>
+            <tbody>
+                <tr><td class="td-bold">Nomor robot kena ban</td><td><div class="risk-meter"><div class="risk-dot med"></div> Medium</div></td><td>Pakai SIM khusus (Rp 5-10rb), ganti jika ban</td></tr>
+                <tr><td class="td-bold">Fonnte service down</td><td><div class="risk-meter"><div class="risk-dot med"></div> Medium</div></td><td>Retry otomatis, alert gagal dicoba besok</td></tr>
+                <tr><td class="td-bold">Watermark "sent via fonnte"</td><td><div class="risk-meter"><div class="risk-dot low"></div> Low</div></td><td>Tidak masalah internal. Upgrade Rp 25rb/bln</td></tr>
+                <tr><td class="td-bold">Nomor personal kena ban</td><td><div class="risk-meter"><div class="risk-dot low"></div> None</div></td><td>Tidak ada risiko — member biasa di grup</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 07. NOTIFIKASI ===== -->
+<section class="section" id="s7">
+    <div class="section-header">
+        <div class="section-icon pink">💬</div>
+        <h2 class="section-title">Format Notifikasi WhatsApp</h2>
+    </div>
+    <p class="section-desc">Setiap notifikasi menyertakan detail PO lengkap termasuk <strong>daftar nomor carton</strong>.</p>
+
+    <div class="grid-2">
+        <div>
+            <h4 style="margin-bottom:12px;color:var(--blue);font-family:'Outfit';font-weight:700;">🔔 Alert Pertama (Hari ke-21)</h4>
+            <div class="wa-preview">
+                <div class="wa-header-bar">
+                    <div class="wa-avatar">🏭</div>
+                    <div><div class="wa-group-name">FG Moisture Alert</div><div class="wa-group-sub">Nomor Robot • 08:00</div></div>
+                </div>
+                <div class="wa-bubble">🔔 <b>MOISTURE CHECK ALERT</b>
+━━━━━━━━━━━━━━━━━━━━━━
+
+📋 <b>PO#:</b> 7865039
+👟 <b>Article:</b> M997H2HN-D
+🌍 <b>Market:</b> UNITED KINGDOM
+🏪 <b>Customer:</b> DSV SOLUTIONS LTD
+🏭 <b>Warehouse:</b> Factory Outlet (UZ)
+📦 <b>Qty Order:</b> 1,092 pairs
+
+📅 <b>FG In:</b> 05 Aug 2026
+⏰ <b>Usia di FG:</b> 21 hari (3 minggu)
+
+📦 <b>Carton Numbers (18 CTN):</b>
+31, 32, 36, 40, 44, 46, 49, 50, 51,
+56, 57, 58, 64, 65, 66, 70, 71, 78
+
+⚠️ Mohon segera cek moisture.
+&lt;15% PASS ✅ | ≥15% FAIL ❌
+
+📊 http://192.168.x.x:3000
+━━━━━━━━━━━━━━━━━━━━━━
+🏭 Parkland - NB Quality System
+                <div class="wa-time">08:00 ✓✓</div></div>
+            </div>
+        </div>
+        <div>
+            <h4 style="margin-bottom:12px;color:var(--red);font-family:'Outfit';font-weight:700;">🔴 Reminder (3 Hari Belum Check)</h4>
+            <div class="wa-preview">
+                <div class="wa-header-bar">
+                    <div class="wa-avatar">🏭</div>
+                    <div><div class="wa-group-name">FG Moisture Alert</div><div class="wa-group-sub">Nomor Robot • 08:00</div></div>
+                </div>
+                <div class="wa-bubble">🔴 <b>REMINDER - MOISTURE CHECK</b>
+━━━━━━━━━━━━━━━━━━━━━━
+
+📋 <b>PO#:</b> 7865039 | M997H2HN-D
+📦 <b>18 CTN:</b> 31, 32, 36, 40, 44,
+46, 49, 50, 51, 56, 57, 58, 64,
+65, 66, 70, 71, 78
+⏰ <b>Usia di FG:</b> 24 hari
+⚠️ <b>Sudah 3 hari belum di-check!</b>
+
+❌ Belum ada update moisture check!
+Mohon segera check.
+
+📊 http://192.168.x.x:3000
+━━━━━━━━━━━━━━━━━━━━━━
+                <div class="wa-time">08:00 ✓✓</div></div>
+            </div>
+            <div class="callout info" style="margin-top:16px;">
+                <span class="callout-icon">📝</span>
+                <div>Jika ada <strong>beberapa PO</strong> dalam 1 hari, dikirim sebagai <strong>1 pesan gabungan</strong> agar tidak spam.</div>
+            </div>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 08. DASHBOARD ===== -->
+<section class="section" id="s8">
+    <div class="section-header">
+        <div class="section-icon cyan">📊</div>
+        <h2 class="section-title">Dashboard Monitoring</h2>
+    </div>
+    <p class="section-desc">
+        Web dashboard untuk monitoring status alert dan input moisture check. Diakses dari beberapa PC via 
+        <code style="background:var(--blue-light);padding:3px 10px;border-radius:6px;color:var(--blue);font-weight:600;">http://192.168.x.x:3000</code>
+    </p>
+
+    <div class="dash-mock">
+        <div class="dash-titlebar">
+            <div class="dash-dot r"></div>
+            <div class="dash-dot y"></div>
+            <div class="dash-dot g"></div>
+            <div class="dash-url">🔒 http://192.168.x.x:3000 — FG Moisture Alert System</div>
+        </div>
+        <div class="dash-body">
+            <div class="dash-stats-row">
+                <div class="dash-stat-card ds1"><div class="ds-val">250</div><div class="ds-lbl">Total PO</div></div>
+                <div class="dash-stat-card ds2"><div class="ds-val">180</div><div class="ds-lbl">⏳ Watching</div></div>
+                <div class="dash-stat-card ds3"><div class="ds-val">45</div><div class="ds-lbl">🔔 Alerted</div></div>
+                <div class="dash-stat-card ds4"><div class="ds-val">38</div><div class="ds-lbl">✅ Checked</div></div>
+                <div class="dash-stat-card ds5"><div class="ds-val">7</div><div class="ds-lbl">❌ Overdue</div></div>
+            </div>
+            <div class="dash-table-wrap">
+                <table>
+                    <thead><tr><th>PO</th><th>Article</th><th>Market</th><th>FG In (SI)</th><th>Usia</th><th>CTN</th><th>Alert</th><th>Moisture</th></tr></thead>
+                    <tbody>
+                        <tr><td class="td-bold">7865039</td><td>M997H2HN-D</td><td>🇬🇧 UK</td><td>04 Aug</td><td>21 d</td><td>18</td><td><span class="badge orange" style="font-size:0.68rem">🔔 Alerted</span></td><td><span class="badge orange" style="font-size:0.68rem">⏳ Pending</span></td></tr>
+                        <tr><td class="td-bold">7865046</td><td>M997H2HN-D</td><td>🇳🇱 NL</td><td>27 Jul</td><td>31 d</td><td>14</td><td><span class="badge green" style="font-size:0.68rem">✅ Sent</span></td><td><span class="badge green" style="font-size:0.68rem">✅ 12% Pass</span></td></tr>
+                        <tr><td class="td-bold">7866444</td><td>GC574EVB-M</td><td>🇰🇷 KR</td><td>29 Jul</td><td>29 d</td><td>22</td><td><span class="badge green" style="font-size:0.68rem">✅ Sent</span></td><td><span class="badge red" style="font-size:0.68rem">❌ 17% Fail</span></td></tr>
+                        <tr><td class="td-bold">7866450</td><td>GC574EVG-M</td><td>🇳🇱 NL</td><td>28 Jul</td><td>9 d</td><td>28</td><td><span class="badge blue" style="font-size:0.68rem">⏳ Watching</span></td><td><span class="badge gray" style="font-size:0.68rem">— N/A</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:24px;">
+        <div class="feature-card">
+            <div class="feature-emoji">📊</div>
+            <div class="feature-title">Overview Stats</div>
+            <div class="feature-desc">Ringkasan total PO, distribusi status, dan statistik terkini</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-emoji">📋</div>
+            <div class="feature-title">Alert Table</div>
+            <div class="feature-desc">Daftar semua PO dengan status, filter, dan pencarian</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-emoji">✅</div>
+            <div class="feature-title">Moisture Check</div>
+            <div class="feature-desc">Form input moisture (%), auto Pass/Fail threshold 15%</div>
+        </div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 09. TECH STACK ===== -->
+<section class="section" id="s9">
+    <div class="section-header">
+        <div class="section-icon purple">🛠️</div>
+        <h2 class="section-title">Tech Stack & Struktur Project</h2>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🧰 Teknologi</div>
+        <div class="table-wrap">
+        <table>
+            <thead><tr><th>Layer</th><th>Teknologi</th><th>Alasan</th></tr></thead>
+            <tbody>
+                <tr><td class="td-bold">Frontend</td><td>HTML + CSS + JavaScript</td><td>Simple, ringan, no framework</td></tr>
+                <tr><td class="td-bold">Backend</td><td>Node.js + Express</td><td>Ringan, support scheduling</td></tr>
+                <tr><td class="td-bold">Database</td><td>SQLite</td><td>Zero config, file-based</td></tr>
+                <tr><td class="td-bold">Scheduler</td><td>node-cron</td><td>Cron job di Node.js</td></tr>
+                <tr><td class="td-bold">Excel Parser</td><td>xlsx (SheetJS)</td><td>Parse file .xlsx</td></tr>
+                <tr><td class="td-bold">WA Gateway</td><td>Fonnte REST API</td><td>Free tier cukup</td></tr>
+                <tr><td class="td-bold">Hosting</td><td>Local PC / Server Internal</td><td>Bind 0.0.0.0 untuk LAN</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <div class="card-title">📁 Struktur Project</div>
+        <div class="project-tree">
+            <div><span class="fo">📂 Finish Good Moisture Alert System/</span></div>
+            <div>&nbsp;&nbsp;├── <span class="fo">📂 server/</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">index.js</span> <span class="ds">← Express + Cron (bind 0.0.0.0)</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">config.js</span> <span class="ds">← Token, Group ID, thresholds</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">db.js</span> <span class="ds">← SQLite setup & queries</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">excelParser.js</span> <span class="ds">← Parse + dedup logic</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">alertEngine.js</span> <span class="ds">← 21-day check + cutoff</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">reminderEngine.js</span> <span class="ds">← 3-day overdue</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="fi">fonnte.js</span> <span class="ds">← Fonnte API wrapper</span></div>
+            <div>&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="fo">📂 routes/</span> <span class="ds">← upload, dashboard, moistureCheck</span></div>
+            <div>&nbsp;&nbsp;├── <span class="fo">📂 public/</span> <span class="ds">← index.html, css/, js/</span></div>
+            <div>&nbsp;&nbsp;├── <span class="fo">📂 data/</span> <span class="ds">← moisture_alert.db (SQLite)</span></div>
+            <div>&nbsp;&nbsp;├── <span class="fo">📂 uploads/</span> <span class="ds">← temp Excel uploads</span></div>
+            <div>&nbsp;&nbsp;└── <span class="fi">package.json</span></div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+        <div class="card-title">🗄️ Database Schema</div>
+        <div class="code-block">
+<span class="cm">-- Tabel PO (1 row per PO)</span>
+<span class="kw">CREATE TABLE</span> <span class="fn">po_data</span> (
+    po_number <span class="st">TEXT UNIQUE</span>,  article <span class="st">TEXT</span>,  market <span class="st">TEXT</span>,
+    customer <span class="st">TEXT</span>,  warehouse <span class="st">TEXT</span>,  qty_order <span class="st">INTEGER</span>,
+    start_in_fg <span class="st">DATE</span>,
+    si_date <span class="st">DATE</span>,  <span class="cm">-- ⭐ trigger (SI DATE)</span>
+    status <span class="st">TEXT</span>  <span class="cm">-- WAITING_SI / WATCHING / ALERTED / CHECKED / SKIPPED</span>
+);
+
+<span class="cm">-- Tabel Carton (dedup key: PO + carton number)</span>
+<span class="kw">CREATE TABLE</span> <span class="fn">cartons</span> (
+    po_number <span class="st">TEXT</span>,  ctn_number <span class="st">INTEGER</span>,
+    <span class="kw">UNIQUE</span>(po_number, ctn_number)  <span class="cm">-- ← DEDUP KEY</span>
+);
+
+<span class="cm">-- Tabel Alert & Moisture Check</span>
+<span class="kw">CREATE TABLE</span> <span class="fn">alerts</span> (po_number <span class="st">TEXT</span>, alert_type <span class="st">TEXT</span>, sent_at <span class="st">DATETIME</span>);
+<span class="kw">CREATE TABLE</span> <span class="fn">moisture_checks</span> (
+    po_number <span class="st">TEXT</span>,  checked_by <span class="st">TEXT</span>,
+    moisture_value <span class="st">REAL</span>,  <span class="cm">-- ≥15% FAIL, &lt;15% PASS</span>
+    result <span class="st">TEXT</span>,  remarks <span class="st">TEXT</span>,  check_date <span class="st">DATETIME</span>
+);</div>
+    </div>
+    <div class="section-divider"></div>
+</section>
+
+<!-- ===== 10. ROADMAP ===== -->
+<section class="section" id="s10">
+    <div class="section-header">
+        <div class="section-icon sunset">🗺️</div>
+        <h2 class="section-title">Roadmap Implementasi</h2>
+    </div>
+
+    <div class="grid-2">
+        <div class="card" style="border-top:4px solid var(--blue);">
+            <div class="card-title"><span class="badge blue" style="font-size:0.85rem;padding:6px 16px;">Phase 1</span> &nbsp;Core System (MVP)</div>
+            <p style="color:var(--text-sec);font-size:0.85rem;margin-bottom:16px;">Semua fitur inti siap operasional.</p>
+            <div class="timeline tl-blue">
+                <div class="timeline-item ti-blue"><div class="timeline-title">Backend Setup</div><div class="timeline-desc">Express, SQLite, config</div></div>
+                <div class="timeline-item ti-blue"><div class="timeline-title">Excel Parser + Dedup</div><div class="timeline-desc">Upload, parse, skip existing</div></div>
+                <div class="timeline-item ti-green"><div class="timeline-title">Alert Engine</div><div class="timeline-desc">21-day check, cutoff, message</div></div>
+                <div class="timeline-item ti-green"><div class="timeline-title">Fonnte Integration</div><div class="timeline-desc">Kirim alert ke WA Group</div></div>
+                <div class="timeline-item ti-orange"><div class="timeline-title">Reminder System</div><div class="timeline-desc">3-day overdue follow-up</div></div>
+                <div class="timeline-item ti-orange"><div class="timeline-title">Web Dashboard</div><div class="timeline-desc">Stats, table, check form, upload</div></div>
+            </div>
+        </div>
+        <div class="card" style="border-top:4px solid var(--purple);">
+            <div class="card-title"><span class="badge purple" style="font-size:0.85rem;padding:6px 16px;">Phase 2</span> &nbsp;Enhancement</div>
+            <p style="color:var(--text-sec);font-size:0.85rem;margin-bottom:16px;">Peningkatan setelah MVP stabil.</p>
+            <div class="timeline tl-purple">
+                <div class="timeline-item ti-purple"><div class="timeline-title">Chart & Analytics</div><div class="timeline-desc">Donut chart, timeline, trends</div></div>
+                <div class="timeline-item ti-purple"><div class="timeline-title">Advanced Filters</div><div class="timeline-desc">Per market, warehouse, date</div></div>
+                <div class="timeline-item ti-pink"><div class="timeline-title">Bulk Moisture Check</div><div class="timeline-desc">Check beberapa PO sekaligus</div></div>
+                <div class="timeline-item ti-pink"><div class="timeline-title">Auto-sync Database</div><div class="timeline-desc">Koneksi ERP/SAP (optional)</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;border-top:4px solid var(--emerald);">
+        <div class="card-title">📋 Kebutuhan untuk Memulai</div>
+        <div class="grid-2">
+            <div>
+                <h5 style="color:var(--blue);margin-bottom:10px;font-family:'Outfit';">🔧 Hardware & Software</h5>
+                <ul style="color:var(--text-sec);font-size:0.88rem;padding-left:20px;line-height:2.2;">
+                    <li>1 PC/Laptop yang selalu menyala</li>
+                    <li>Node.js terinstall</li>
+                    <li>Koneksi internet</li>
+                    <li>Jaringan internal (LAN/WiFi)</li>
+                </ul>
+            </div>
+            <div>
+                <h5 style="color:var(--emerald);margin-bottom:10px;font-family:'Outfit';">📱 WhatsApp & Fonnte</h5>
+                <ul style="color:var(--text-sec);font-size:0.88rem;padding-left:20px;line-height:2.2;">
+                    <li>1 SIM card baru (Rp 5-10rb)</li>
+                    <li>Register Fonnte (gratis)</li>
+                    <li>WA Group + invite tim & robot</li>
+                    <li>API Token & Group ID</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container">
+        <p style="font-size:1rem;"><strong>📄 FG Moisture Alert System</strong> — Project Proposal v1.0</p>
+        <p style="margin-top:8px;"><strong>🏭 Parkland Factory</strong> &nbsp;•&nbsp; <strong>New Balance</strong> &nbsp;•&nbsp; 6 Agustus 2026</p>
+        <p style="margin-top:8px;opacity:0.6;">Dokumen ini bersifat internal dan rahasia.</p>
+    </div>
+</footer>
+
+</body>
+</html>

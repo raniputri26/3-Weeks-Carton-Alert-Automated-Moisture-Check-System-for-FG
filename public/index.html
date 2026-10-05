@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moisture Alert - Editorial Edition</title>
+    
+    <!-- High-end Editorial Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Great+Vibes&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="css/style.css?v=1790818848942">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <h2>Moisture<span>Alert</span></h2>
+                <button id="sidebarToggle" class="sidebar-toggle" title="Toggle Sidebar">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard" class="icon"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="po-tracking" style="display: none;">
+                    <i data-lucide="package-search" class="icon"></i>
+                    <span class="nav-text">PO Tracking</span>
+                </a>
+                <a href="#" class="nav-item" data-view="analytics">
+                    <i data-lucide="bar-chart-3" class="icon"></i>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <i data-lucide="sliders-horizontal" class="icon"></i>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-bottom">
+                <div class="system-status-card">
+                    <div class="status-header">
+                        <i data-lucide="server" class="status-icon"></i>
+                        <h4>System Status</h4>
+                    </div>
+                    <p>WhatsApp Engine & Background Sync are running normally.</p>
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span>
+                        System Online
+                    </div>
+                </div>
+                
+                <div class="user-profile">
+                    <div class="avatar">
+                        <img src="https://ui-avatars.com/api/?name=Y+N&background=fce8db&color=b56a42" alt="Avatar">
+                    </div>
+                    <div class="user-info">
+                        <strong>Yani</strong>
+                        <span>QC Inspector</span>
+                    </div>
+                    <button class="logout-btn" onclick="logout()" title="Logout" style="margin-left: auto;"><i data-lucide="log-out"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div class="sticky-top-area">
+                <header class="top-header">
+                    <div class="header-titles">
+                        <h1>Hello, Yani! 👋</h1>
+                        <p>Here's what's happening with your carton moisture today.</p>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <div class="search-bar">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="searchInput" placeholder="Search anything...">
+                            <span class="search-shortcut">⌘K</span>
+                        </div>
+                        <button class="icon-btn">
+                            <i data-lucide="bell"></i>
+                            <span class="badge-dot"></span>
+                        </button>
+                        <input type="file" id="excelUpload" accept=".xlsx, .xls" hidden>
+                        <button class="btn-secondary" onclick="triggerManualAlert()" style="margin-right: 8px; display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.95rem; border-radius: var(--radius-md); transition: var(--transition); background: white; color: var(--c-olive); border: 1px solid var(--c-border); cursor: pointer;" title="Trigger alerts now">
+                            <i data-lucide="play" style="width: 16px; height: 16px; margin-right: 6px;"></i> Run Alert
+                        </button>
+                        
+<button class="btn-outline" onclick="exportExcel()" style="margin-right: 10px; border-color: var(--c-primary); color: var(--c-primary);">
+    <i data-lucide="download" style="width: 16px; height: 16px; margin-right: 6px;"></i> Export Excel
+</button>
+<button class="btn-primary" onclick="document.getElementById('excelUpload').click()">
+                            Upload Data
+                        </button>
+                    </div>
+                </header>
+
+                <div class="top-widgets-wrapper" id="view-dashboard-widgets">
+                    <!-- TOP WIDGETS -->
+                    <div class="top-widgets">
+                        <!-- Stats Grid -->
+                        <div class="stats-grid">
+                            <div class="stat-card" onclick="toggleFilter('')" style="cursor:pointer;" title="Click to filter">
+                                <div class="stat-header">
+                                    <div class="stat-icon-wrap" style="background:#e3effa; color:#4278b5;">
+                                        <i data-lucide="hash"></i>
+                                    </div>
+                                    <span class="stat-trend trend-up"><i data-lucide="trending-up"></i> +12%</span>
+                                </div>
+                                <div class="stat-data">
+                                    <span class="stat-label">Total PO Tracked</span>
+                                    <strong class="stat-value" id="stat-total">0</strong>
+                                </div>
+                                <div class="stat-chart line-chart-1"></div>
+                            </div>
+                            
+                            <div class="stat-card" onclick="toggleFilter('WAITING_SI')" style="cursor:pointer;" title="Click to filter">
+                                <div class="stat-header">
+                                    <div class="stat-icon-wrap bg-peach">
+                                        <i data-lucide="clock"></i>
+                                    </div>
+                                    <span class="stat-trend trend-neutral"><i data-lucide="minus"></i> 0%</span>
+                                </div>
+                                <div class="stat-data">
+                                    <span class="stat-label">Waiting SI</span>
+                                    <strong class="stat-value" id="stat-waiting-si">0</strong>
+                                </div>
+                                <div class="stat-chart line-chart-2"></div>
+                            </div>
+
+                            <div class="stat-card" onclick="toggleFilter('WATCHING')" style="cursor:pointer;" title="Click to filter">
+                                <div class="stat-header">
+                                    <div class="stat-icon-wrap bg-peach">
+                                        <i data-lucide="eye"></i>
+                                    </div>
+                                    <span class="stat-trend trend-up"><i data-lucide="trending-up"></i> +5%</span>
+                                </div>
+                                <div class="stat-data">
+                                    <span class="stat-label">Watching</span>
+                                    <strong class="stat-value" id="stat-watching">0</strong>
+                                </div>
+                                <div class="stat-chart line-chart-2"></div>
+                            </div>
+
+                            <div class="stat-card" onclick="toggleFilter('ALERTED')" style="cursor:pointer;" title="Click to filter">
+                                <div class="stat-header">
+                                    <div class="stat-icon-wrap bg-rose">
+                                        <i data-lucide="alert-triangle"></i>
+                                    </div>
+                                    <span class="stat-trend trend-down"><i data-lucide="trending-down"></i> -2%</span>
+                                </div>
+                                <div class="stat-data">
+                                    <span class="stat-label">Alerted</span>
+                                    <strong class="stat-value" id="stat-alerted">0</strong>
+                                </div>
+                                <div class="stat-chart line-chart-3"></div>
+                            </div>
+
+                            
+<div class="stat-card" onclick="toggleFilter('CHECKED')" style="cursor:pointer;" title="Click to filter">
+    <div class="stat-header">
+        <div class="stat-icon-wrap" style="background:#e6fae6; color:#2d8a2d;">
+            <i data-lucide="check-circle"></i>
+        </div>
+        <span class="stat-trend trend-up" style="color:var(--c-success)"><i data-lucide="trending-up"></i> +3%</span>
+    </div>
+    <div class="stat-data">
+        <span class="stat-label">Checked</span>
+        <strong class="stat-value" id="stat-checked">0</strong>
+    </div>
+    <div class="stat-chart line-chart-2"></div>
+</div>
+<div class="stat-card" onclick="toggleFilter('OVERDUE')" style="cursor:pointer;" title="Click to filter">
+                                <div class="stat-header">
+                                    <div class="stat-icon-wrap" style="background:#fae3e3; color:#b54242;">
+                                        <i data-lucide="x-circle"></i>
+                                    </div>
+                                    <span class="stat-trend trend-up" style="color:var(--c-danger)"><i data-lucide="trending-up"></i> +1%</span>
+                                </div>
+                                <div class="stat-data">
+                                    <span class="stat-label">Overdue</span>
+                                    <strong class="stat-value" id="stat-overdue">0</strong>
+                                </div>
+                                <div class="stat-chart line-chart-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main-content-scroll">
+                
+
+            </div>
+
+            <div class="content-wrapper">
+                
+                <!-- DASHBOARD VIEW -->
+                <div class="table-section view-section" id="view-dashboard-content">
+                    <div class="section-header">
+                        <h2>Recent Orders</h2>
+                        <div class="table-filters">
+                            <button class="btn-text" onclick="switchView('po-tracking')">View All Orders</button>
+                            <select id="filterStatus" class="elegant-select">
+                                <option value="">Filter: All Status</option>
+                                <option value="WAITING_SI">Waiting SI</option>
+                                <option value="WATCHING">Watching</option>
+                                <option value="ALERTED">Alerted</option>
+                                <option value="CHECKED">Checked</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table id="poTable" class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>PO No.</th>
+                                    <th>Article & Market</th>
+                                    <th>Status</th>
+                                    <th>Due / Age</th>
+                                    <th>FG In (SI)</th>
+                                    <th>Moisture</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center" style="padding:4rem; color:#888;">
+                                        <i data-lucide="loader-2" class="spin-icon"></i> Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-footer">
+                        <span id="showingText" class="text-muted">Showing results...</span>
+                        <div class="pagination">
+                            <button class="icon-btn-small" id="btnPrevPage" onclick="changePage(-1)"><i data-lucide="chevron-left"></i></button>
+                            <span id="pageIndicator" class="page-indicator">1 / 1</span>
+                            <button class="icon-btn-small" id="btnNextPage" onclick="changePage(1)"><i data-lucide="chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PO TRACKING VIEW -->
+                <div class="table-section view-section" id="view-po-tracking-content" style="display: none; height: 100%;">
+                    <div class="section-header" style="background: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-bottom: 1px solid var(--c-border); padding: 1.5rem 2rem;">
+                        <h2 style="font-size: 1.5rem; color: var(--c-olive);">PO Tracking Master Data</h2>
+                        
+                        <!-- Advanced Filters -->
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center; flex-wrap: wrap;">
+                            <div style="position: relative; flex: 1; min-width: 250px;">
+                                <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--c-text-muted); width: 18px;"></i>
+                                <input type="text" placeholder="Search PO, Article, or Customer..." class="elegant-input" style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                            </div>
+                            
+                            <select class="elegant-select" style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                                <option value="">All Markets</option>
+                                <option value="NA">North America (NA)</option>
+                                <option value="EMEA">Europe (EMEA)</option>
+                                <option value="APAC">Asia Pacific</option>
+                            </select>
+                            
+                            <select class="elegant-select" style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                                <option value="">All Statuses</option>
+                                <option value="WAITING_SI">Waiting SI</option>
+                                <option value="WATCHING">Watching</option>
+                                <option value="ALERTED">Alerted</option>
+                                <option value="CHECKED">Checked</option>
+                            </select>
+                            
+                            <input type="date" class="elegant-input" style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border); color: var(--c-text-muted);">
+                            
+                            <button class="btn-primary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem;"><i data-lucide="download" style="width: 18px;"></i> Export</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container" style="flex: 1; min-height: 0; overflow-y: auto;">
+                        <table class="modern-table">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th>PO No.</th>
+                                    <th>Article</th>
+                                    <th>Market & Customer</th>
+                                    <th>Qty Order</th>
+                                    <th>FG In (SI)</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poMasterTableBody">
+                                <tr><td colspan="7" class="text-center loading-text">Loading data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="background: white; border-top: 1px solid var(--c-border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+                        <span id="poMasterShowingText" style="color: var(--c-text-muted); font-size: 0.9rem;">Showing results</span>
+                        <div style="display: flex; gap: 0.5rem;" id="poMasterPagination">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS VIEW -->
+                <div class="view-section" id="view-analytics-content" style="display: none; height: 100%; overflow-y: auto; padding-right: 0.5rem; margin-right: -0.5rem;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.75rem; color: var(--c-olive);">Performance Analytics</h2>
+                        <select class="elegant-select" style="background: white; border: 1px solid var(--c-border); padding: 0.5rem 1rem; border-radius: 8px;">
+                            <option>Last 6 Months</option>
+                            <option>This Year</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-bottom: 3rem;">
+                        
+                        <!-- Wide Chart 1: Trend -->
+                        <div class="chart-card" style="grid-column: 1 / -1; background: white; padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);">
+                            <h3 style="font-family: var(--font-serif); font-size: 1.25rem; color: var(--c-olive); margin-bottom: 1.5rem;">Average Moisture Fluctuation</h3>
+                            <div style="height: 350px; position: relative;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Ratio -->
+                        <div class="chart-card" style="background: white; padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);">
+                            <h3 style="font-family: var(--font-serif); font-size: 1.25rem; color: var(--c-olive); margin-bottom: 1.5rem;">QC Pass vs Fail Ratio</h3>
+                            <div style="height: 300px; position: relative; display: flex; justify-content: center; align-items: center;">
+                                <canvas id="ratioChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 3: Market -->
+                        <div class="chart-card" style="background: white; padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);">
+                            <h3 style="font-family: var(--font-serif); font-size: 1.25rem; color: var(--c-olive); margin-bottom: 1.5rem;">Rejection Rate by Market</h3>
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="vendorChart"></canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- SETTINGS VIEW -->
+                <div class="view-section" id="view-settings-content" style="display: none; height: 100%; overflow-y: auto; padding-right: 0.5rem; margin-right: -0.5rem;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.75rem; color: var(--c-olive);">System Configuration</h2>
+                    </div>
+                    
+                    <div style="padding-bottom: 3rem; max-width: 800px;">
+                        <div style="background: white; padding: 2.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); margin-bottom: 2rem;">
+                            <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--c-olive); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="bell-ring" style="color: var(--c-peach-text);"></i> Alert Rules
+                            </h3>
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Trigger Days (Usia di FG)</label>
+                                <input type="number" value="21" class="elegant-input" style="width: 150px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                                <small style="display: block; color: var(--c-text-muted); margin-top: 0.5rem;">Jumlah hari setelah SI Date untuk memicu status ALERTED.</small>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Moisture Threshold (%)</label>
+                                <input type="number" value="15" class="elegant-input" style="width: 150px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                                <small style="display: block; color: var(--c-text-muted); margin-top: 0.5rem;">Batas maksimum persentase moisture untuk lulus (PASS).</small>
+                            </div>
+                        </div>
+
+                        <div style="background: white; padding: 2.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm);">
+                            <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--c-olive); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i data-lucide="bot" style="color: #456b49;"></i> WhatsApp Bot (Fonnte)
+                            </h3>
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Fonnte API Token</label>
+                                <input type="password" value="****************" class="elegant-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Target WhatsApp Group ID / Number</label>
+                                <input type="text" value="12036302xxxxxx@g.us" class="elegant-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
+                            </div>
+                            <div style="margin-top: 2rem; text-align: right;">
+                                <button class="btn-primary">Save Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="moistureModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Quality Check</h2>
+                <button class="close-btn" onclick="closeModal('moistureModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="po-summary" id="mc-po-summary"></div>
+                <form id="moistureForm">
+                    <input type="hidden" id="mc-po-number">
+                    <div class="form-group">
+                        <label>Checked By</label>
+                        <input type="text" id="mc-checked-by" required placeholder="Enter inspector name">
+                    </div>
+                    <div class="form-group">
+                        <label>Moisture Value (%)</label>
+                        <div class="input-with-preview">
+                            <input type="number" id="mc-value" step="0.1" required placeholder="0.0">
+                            <div id="mc-preview" class="preview-badge">--</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks</label>
+                        <textarea id="mc-remarks" rows="2" placeholder="Optional notes..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary" id="btnSubmitMc">Save Results</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>PO Details</h2>
+                <button class="close-btn" onclick="closeModal('detailModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="detail-modal-body">Loading...</div>
+        </div>
+    </div>
+
+    <div id="uploadResultModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload Results</h2>
+                <button class="close-btn" onclick="closeModal('uploadResultModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="upload-result-body"></div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="closeModal('uploadResultModal')">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/app.js?v=1790586585737"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

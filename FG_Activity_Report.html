@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Report — FG Moisture Alert System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --white: #ffffff;
+            --text: #1a1f36;
+            --text-sec: #4a5578;
+            --text-muted: #8892b0;
+            --border: #e2e8f4;
+            --blue: #4361ee;
+            --indigo: #6366f1;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --red: #ef4444;
+            --orange: #f97316;
+            --amber: #f59e0b;
+            --green: #22c55e;
+            --emerald: #10b981;
+            --teal: #14b8a6;
+            --cyan: #06b6d4;
+            --sky: #0ea5e9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            background: linear-gradient(135deg, #0ea5e9 0%, #4361ee 30%, #8b5cf6 60%, #ec4899 100%);
+            position: relative;
+            overflow: hidden;
+            padding: 60px 0 70px;
+            color: #fff;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0; right: 0;
+            height: 50px;
+            background: var(--bg);
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.25;
+            animation: orbF 18s ease-in-out infinite;
+        }
+        .orb-1 { width: 280px; height: 280px; background:
+            #fff; top: -60px; right: 10%; }
+        .orb-2 { width: 200px; height: 200px; background: #fbbf24; bottom: -40px; left: 5%; animation-delay: -6s; }
+        .orb-3 { width: 160px; height: 160px; background: #34d399; top: 40%; right: 30%; animation-delay: -12s; }
+        @keyframes orbF { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(15px,-10px) scale(1.08); } }
+
+        .hero-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+            z-index: 2;
+        }
+        .hero-logos { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+        .hero-logos img { height: 38px; filter: brightness(0) invert(1); opacity: 0.9; }
+        .hero-logos .div { width: 2px; height: 28px; background: rgba(255,255,255,0.3); border-radius: 1px; }
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.6rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin-bottom: 8px;
+        }
+        .hero-sub { font-size: 1.05rem; opacity: 0.9; max-width: 550px; }
+        .hero-tags { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+        .hero-tag {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 7px 16px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 40px; }
+
+        /* ===== SUMMARY STRIP ===== */
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: -28px 0 40px;
+            position: relative;
+            z-index: 3;
+        }
+        .ss-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 22px 20px;
+            text-align: center;
+            box-shadow: 0 6px 24px rgba(67,97,238,0.1);
+            border: 1px solid var(--border);
+            transition: transform 0.3s;
+        }
+        .ss-card:hover { transform: translateY(-3px); }
+        .ss-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .ss-val { font-family: 'Outfit'; font-size: 1.6rem; font-weight: 900; }
+        .ss-lbl { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+        .ss-card:nth-child(1) .ss-val { color: var(--blue); }
+        .ss-card:nth-child(2) .ss-val { color: var(--emerald); }
+        .ss-card:nth-child(3) .ss-val { color: var(--purple); }
+        .ss-card:nth-child(4) .ss-val { color: var(--orange); }
+
+        /* ===== SECTION ===== */
+        .section { padding: 40px 0; }
+        .section-head {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+        }
+        .s-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: #fff; flex-shrink: 0;
+        }
+        .s-icon.bl { background: linear-gradient(135deg, var(--blue), var(--cyan)); }
+        .s-icon.gr { background: linear-gradient(135deg, var(--green), var(--teal)); }
+        .s-icon.or { background: linear-gradient(135deg, var(--orange), var(--amber)); }
+        .s-icon.pu { background: linear-gradient(135deg, var(--purple), var(--pink)); }
+        .s-icon.pk { background: linear-gradient(135deg, var(--pink), var(--red)); }
+        .s-icon.cy { background: linear-gradient(135deg, var(--cyan), var(--blue)); }
+        .s-icon.gn { background: linear-gradient(135deg, var(--emerald), var(--cyan)); }
+        .s-title { font-family: 'Outfit'; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+        .s-desc { color: var(--text-sec); font-size: 0.92rem; margin-bottom: 22px; max-width: 750px; }
+        .s-divider {
+            height: 3px;
+            background: linear-gradient(to right, var(--blue), var(--purple), var(--pink), transparent);
+            border-radius: 2px;
+            margin: 40px 0 0;
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 28px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.3s;
+        }
+        .card:hover { box-shadow: 0 6px 20px rgba(67,97,238,0.08); transform: translateY(-2px); }
+        .card-title {
+            font-family: 'Outfit'; font-size: 1.05rem; font-weight: 700;
+            margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* ===== TABLE ===== */
+        .tw { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+        thead th {
+            background: linear-gradient(135deg, #eef2ff, #faf5ff);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.73rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--blue);
+            border-bottom: 2px solid var(--border);
+        }
+        tbody td {
+            padding: 11px 16px;
+            border-bottom: 1px solid #f0f2f8;
+            color: var(--text-sec);
+        }
+        tbody tr:hover td { background: #f8faff; }
+        tbody tr:last-child td { border-bottom: none; }
+        .td-b { font-weight: 700; color: var(--text); }
+
+        /* ===== BADGE ===== */
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 12px; border-radius: 50px;
+            font-size: 0.73rem; font-weight: 700; white-space: nowrap;
+        }
+        .badge.bl { background: #eef2ff; color: var(--blue); }
+        .badge.gr { background: #ecfdf5; color: var(--emerald); }
+        .badge.or { background: #fff7ed; color: var(--orange); }
+        .badge.rd { background: #fef2f2; color: var(--red); }
+        .badge.pu { background: #faf5ff; color: var(--purple); }
+        .badge.pk { background: #fdf2f8; color: var(--pink); }
+        .badge.gy { background: #f1f5f9; color: #64748b; }
+        .badge.cy { background: #ecfeff; color: var(--teal); }
+        .badge.am { background: #fffbeb; color: #b45309; }
+
+        /* ===== TIMELINE ===== */
+        .timeline { position: relative; padding-left: 36px; }
+        .timeline::before {
+            content: ''; position: absolute;
+            left: 11px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px;
+            background: linear-gradient(to bottom, var(--blue), var(--purple), var(--pink), var(--orange), var(--green));
+        }
+        .tl-item { position: relative; margin-bottom: 24px; }
+        .tl-item:last-child { margin-bottom: 0; }
+        .tl-item::before {
+            content: ''; position: absolute;
+            left: -30px; top: 5px; width: 14px; height: 14px;
+            border-radius: 50%; border: 3px solid; background: #fff;
+        }
+        .tl-item.bl::before { border-color: var(--blue); }
+        .tl-item.gr::before { border-color: var(--green); }
+        .tl-item.pu::before { border-color: var(--purple); }
+        .tl-item.pk::before { border-color: var(--pink); }
+        .tl-item.or::before { border-color: var(--orange); }
+        .tl-item.cy::before { border-color: var(--cyan); }
+        .tl-item.am::before { border-color: var(--amber); }
+        .tl-time {
+            font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; margin-bottom: 4px;
+        }
+        .tl-time.bl { color: var(--blue); }
+        .tl-time.gr { color: var(--green); }
+        .tl-time.pu { color: var(--purple); }
+        .tl-time.pk { color: var(--pink); }
+        .tl-time.or { color: var(--orange); }
+        .tl-time.cy { color: var(--cyan); }
+        .tl-time.am { color: var(--amber); }
+        .tl-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+        .tl-desc { color: var(--text-sec); font-size: 0.85rem; line-height: 1.6; }
+
+        /* ===== CALLOUT ===== */
+        .callout {
+            border-radius: 12px; padding: 16px 20px; margin: 14px 0;
+            display: flex; gap: 12px; font-size: 0.88rem; border-left: 4px solid;
+        }
+        .co-icon { font-size: 1.1rem; flex-shrink: 0; }
+        .callout.info { background: #eef2ff; border-color: var(--blue); color: #3730a3; }
+        .callout.success { background: #ecfdf5; border-color: var(--emerald); color: #065f46; }
+        .callout.warning { background: #fffbeb; border-color: var(--amber); color: #92400e; }
+
+        /* ===== DELIVERABLE CARDS ===== */
+        .del-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .del-card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .del-card:hover { box-shadow: 0 8px 24px rgba(139,92,246,0.12); transform: translateY(-3px); }
+        .del-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        }
+        .del-card.d1::before { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+        .del-card.d2::before { background: linear-gradient(90deg, var(--green), var(--emerald)); }
+        .del-card.d3::before { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+        .del-card.d4::before { background: linear-gradient(90deg, var(--orange), var(--amber)); }
+        .del-card.d5::before { background: linear-gradient(90deg, var(--pink), var(--red)); }
+        .del-card.d6::before { background: linear-gradient(90deg, var(--cyan), var(--blue)); }
+        .del-emoji { font-size: 2rem; margin-bottom: 10px; }
+        .del-title { font-family: 'Outfit'; font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+        .del-desc { color: var(--text-sec); font-size: 0.83rem; line-height: 1.6; }
+
+        /* ===== CHECK LIST ===== */
+        .checklist { list-style: none; }
+        .checklist li {
+            padding: 10px 14px; display: flex; align-items: flex-start; gap: 10px;
+            font-size: 0.9rem; border-bottom: 1px solid #f0f2f8;
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .check-icon { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+        /* ===== GRID ===== */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #4c1d95);
+            padding: 36px 0; text-align: center;
+            color: rgba(255,255,255,0.6); font-size: 0.82rem; margin-top: 20px;
+        }
+        .footer strong { color: #fff; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8rem; }
+            .container { padding: 0 20px; }
+            .summary-strip, .del-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+        @media print {
+            .hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="hero-inner">
+        <div class="hero-logos">
+            <img src="img/NB.png" alt="New Balance" onerror="this.style.display='none'">
+            <div class="div"></div>
+            <img src="img/Parkland.png" alt="Parkland" onerror="this.style.display='none'">
+        </div>
+        <h1>📝 Activity & Progress Report</h1>
+        <p class="hero-sub">
+            Laporan aktivitas dan progress pengembangan <strong>FG Moisture Alert System</strong> — 
+            dari analisis data hingga konsep sistem siap implementasi.
+        </p>
+        <div class="hero-tags">
+            <span class="hero-tag">📅 6 – 7 Agustus 2026</span>
+            <span class="hero-tag">🏭 Parkland Factory</span>
+            <span class="hero-tag">📊 Fase: Konsep & Desain</span>
+            <span class="hero-tag">✅ Status: Siap Build</span>
+        </div>
+    </div>
+</header>
+
+<!-- ===== SUMMARY STRIP ===== -->
+<div class="container">
+    <div class="summary-strip">
+        <div class="ss-card">
+            <div class="ss-icon">📊</div>
+            <div class="ss-val">5,998</div>
+            <div class="ss-lbl">Records Dianalisis</div>
+        </div>
+        <div class="ss-card">
+            <div class="ss-icon">✅</div>
+            <div class="ss-val">6</div>
+            <div class="ss-lbl">Keputusan Final</div>
+        </div>
+        <div class="ss-card">
+            <div class="ss-icon">📄</div>
+            <div class="ss-val">1</div>
+            <div class="ss-lbl">Proposal Dibuat</div>
+        </div>
+        <div class="ss-card">
+            <div class="ss-icon">⏰</div>
+            <div class="ss-val">2 Hari</div>
+            <div class="ss-lbl">Durasi Konsep</div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 1. EXECUTIVE SUMMARY ===== -->
+<div class="container">
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon bl">📋</div>
+        <h2 class="s-title">Executive Summary</h2>
+    </div>
+    <p class="s-desc">
+        Ringkasan keseluruhan aktivitas dan pencapaian dalam pengembangan konsep FG Moisture Alert System.
+    </p>
+
+    <div class="card">
+        <div class="card-title">🎯 Latar Belakang Project</div>
+        <p style="color:var(--text-sec); font-size:0.9rem; margin-bottom:14px;">
+            Finish Good (FG) yang disimpan di gudang lebih dari <strong>3 minggu</strong> memerlukan pengecekan moisture 
+            untuk menjaga kualitas produk. Saat ini proses ini dilakukan manual tanpa reminder, sehingga berisiko terlewat.
+        </p>
+        <p style="color:var(--text-sec); font-size:0.9rem;">
+            Diputuskan untuk membangun <strong>FG Moisture Alert System</strong> — sistem alert otomatis via WhatsApp Group 
+            dengan dashboard monitoring, menggunakan <strong>Fonnte</strong> sebagai WhatsApp Gateway (gratis).
+        </p>
+    </div>
+
+    <div class="callout success">
+        <span class="co-icon">✅</span>
+        <div>
+            <strong>Status saat ini: Fase konsep selesai, semua parameter telah disetujui, dokumen proposal telah dibuat.</strong>
+            Sistem siap untuk masuk fase implementasi (build).
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 2. TIMELINE AKTIVITAS ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon pu">📅</div>
+        <h2 class="s-title">Timeline Aktivitas</h2>
+    </div>
+    <p class="s-desc">Kronologi semua aktivitas yang telah dilakukan dari awal hingga saat ini.</p>
+
+    <div class="card">
+        <div class="card-title">📆 Rabu, 6 Agustus 2026</div>
+        <div class="timeline">
+            <div class="tl-item bl">
+                <div class="tl-time bl">16:00 — Analisis Data</div>
+                <div class="tl-title">Eksplorasi & Analisis Data Excel</div>
+                <div class="tl-desc">
+                    Membuka dan menganalisis file <strong>FG First Carton Tracking.xlsx</strong> sheet "090034 FG In Scan History". 
+                    Identifikasi <strong>5,998 records</strong>, <strong>250 unique PO</strong>, 10+ market, 10+ warehouse. 
+                    Memahami struktur data: kolom ARTICLE, PO, MARKET, CUSTOMER, WAREHOUSE, QTY ORDER, START IN FG, NO. CTN, SCAN DATE.
+                </div>
+            </div>
+            <div class="tl-item cy">
+                <div class="tl-time cy">16:01 — Riset Fonnte</div>
+                <div class="tl-title">Riset Fonnte WhatsApp Gateway</div>
+                <div class="tl-desc">
+                    Meneliti Fonnte API: pricing, capabilities, free plan (1.000 pesan/bulan), cara kirim ke WA Group, 
+                    API endpoints (POST /send, /fetch-group, /get-whatsapp-group). Estimasi kebutuhan ~250 pesan/bulan — 
+                    <strong>free plan cukup (margin 4x)</strong>.
+                </div>
+            </div>
+            <div class="tl-item gr">
+                <div class="tl-time gr">16:03 — Konsep Awal</div>
+                <div class="tl-title">Pembuatan Konsep & Arsitektur Sistem V1</div>
+                <div class="tl-desc">
+                    Membuat implementation plan pertama meliputi: arsitektur sistem (Node.js + SQLite + Fonnte), 
+                    database schema, alur kerja alert 3 minggu, format notifikasi WA, fitur dashboard, analisis biaya & risiko. 
+                    Menyusun 6 pertanyaan kritis untuk dibahas.
+                </div>
+            </div>
+            <div class="tl-item or">
+                <div class="tl-time or">16:16 — Diskusi & Klarifikasi Ronde 1</div>
+                <div class="tl-title">Pembahasan Detail Requirements</div>
+                <div class="tl-desc">
+                    Diskusi mendalam tentang: nomor carton dalam notifikasi, logika deduplication (skip data lama saat re-upload), 
+                    cutoff rule (PO lama saat sistem mulai → SKIP), reminder setiap 3 hari, upload manual via dashboard, jadwal alert pagi hari.
+                    <strong>Analisis struktur carton per PO</strong> — contoh: PO 7865039 memiliki 18 carton unik.
+                </div>
+            </div>
+            <div class="tl-item pu">
+                <div class="tl-time pu">16:18 — Update Konsep V2</div>
+                <div class="tl-title">Update Implementation Plan dengan Feedback</div>
+                <div class="tl-desc">
+                    Mengupdate konsep dengan semua jawaban: format WA dengan daftar carton, flow deduplication detail, 
+                    flow cutoff dengan contoh konkret, penjelasan WA Group & keamanan nomor.
+                </div>
+            </div>
+            <div class="tl-item pk">
+                <div class="tl-time pk">16:33 — Diskusi & Klarifikasi Ronde 2</div>
+                <div class="tl-title">Finalisasi Parameter Sistem</div>
+                <div class="tl-desc">
+                    Jawaban final: <strong>Moisture ≥ 15% = FAIL</strong>, dashboard diakses dari <strong>beberapa PC</strong> dalam 1 jaringan, 
+                    penjelasan detail keamanan WA Group (hanya nomor robot yang berisiko ban, member lain 100% aman).
+                </div>
+            </div>
+            <div class="tl-item am">
+                <div class="tl-time am">16:35 — Konsep Final V3</div>
+                <div class="tl-title">Dokumen Konsep Final (Semua Parameter Disetujui)</div>
+                <div class="tl-desc">
+                    Menghasilkan dokumen konsep final dengan semua keputusan: threshold 15%, akses multi-PC via IP internal (0.0.0.0), 
+                    lifecycle status PO (WATCHING → ALERTED → CHECKED), database schema lengkap, project structure.
+                </div>
+            </div>
+            <div class="tl-item gr">
+                <div class="tl-time gr">16:43 — Proposal HTML V1</div>
+                <div class="tl-title">Pembuatan Dokumen Proposal HTML (Dark Mode)</div>
+                <div class="tl-desc">
+                    Membuat proposal HTML profesional dark-mode untuk presentasi ke manajemen. 
+                    10 section lengkap: latar belakang, analisis data, parameter, arsitektur, alur kerja, 
+                    Fonnte, notifikasi, dashboard, tech stack, roadmap.
+                </div>
+            </div>
+            <div class="tl-item bl">
+                <div class="tl-time bl">16:52 — Proposal HTML V2</div>
+                <div class="tl-title">Redesign Proposal dengan Warna Cerah & Vibrant</div>
+                <div class="tl-desc">
+                    Redesign total proposal dengan tema cerah: gradient hero biru-ungu-pink, 
+                    stat cards full-color, WA preview mirip asli, animated floating orbs, 
+                    dashboard mockup, badge warna-warni. File: <strong>FG_Moisture_Alert_Proposal.html</strong> (69 KB).
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📆 Kamis, 7 Agustus 2026</div>
+        <div class="timeline">
+            <div class="tl-item gr">
+                <div class="tl-time gr">13:38 — Activity Report</div>
+                <div class="tl-title">Pembuatan Laporan Aktivitas & Progress</div>
+                <div class="tl-desc">
+                    Membuat dokumen activity report (ini) yang merangkum seluruh aktivitas, 
+                    keputusan, deliverables, dan next steps.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 3. DELIVERABLES ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon gr">📦</div>
+        <h2 class="s-title">Deliverables yang Dihasilkan</h2>
+    </div>
+    <p class="s-desc">Semua output yang telah dihasilkan selama fase konsep.</p>
+
+    <div class="del-grid">
+        <div class="del-card d1">
+            <div class="del-emoji">📊</div>
+            <div class="del-title">Analisis Data Excel</div>
+            <div class="del-desc">
+                Analisis lengkap 5,998 records: 250 PO unik, distribusi market (US 60%), top customers, 
+                warehouse mapping, struktur carton per PO, date range (Jun – Aug 2026).
+            </div>
+        </div>
+        <div class="del-card d2">
+            <div class="del-emoji">🔍</div>
+            <div class="del-title">Riset Fonnte API</div>
+            <div class="del-desc">
+                Riset lengkap Fonnte: pricing (free plan 1.000 msg/bulan cukup), API endpoints, 
+                cara kirim ke WA Group, analisis risiko, estimasi biaya Rp 0.
+            </div>
+        </div>
+        <div class="del-card d3">
+            <div class="del-emoji">📐</div>
+            <div class="del-title">Arsitektur & Desain Sistem</div>
+            <div class="del-desc">
+                Arsitektur lengkap: Node.js + Express + SQLite + Fonnte + Cron. 
+                Database schema (4 tabel), project structure (14 files), API design.
+            </div>
+        </div>
+        <div class="del-card d4">
+            <div class="del-emoji">⚙️</div>
+            <div class="del-title">Logika Bisnis</div>
+            <div class="del-desc">
+                Logika deduplication (PO+CTN), cutoff rule (PO lama → SKIP), 
+                alert 21 hari, reminder 3 hari, threshold moisture 15%.
+            </div>
+        </div>
+        <div class="del-card d5">
+            <div class="del-emoji">💬</div>
+            <div class="del-title">Format Notifikasi WA</div>
+            <div class="del-desc">
+                Template pesan WA: alert pertama (detail + carton list), reminder (overdue warning), 
+                multi-PO gabungan (anti-spam).
+            </div>
+        </div>
+        <div class="del-card d6">
+            <div class="del-emoji">📄</div>
+            <div class="del-title">Dokumen Proposal HTML</div>
+            <div class="del-desc">
+                Proposal profesional 10 section untuk presentasi ke manajemen. 
+                69 KB, responsive, vibrant design, siap print ke PDF.
+            </div>
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 4. KEPUTUSAN YANG TELAH DIAMBIL ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon or">✅</div>
+        <h2 class="s-title">Keputusan yang Telah Diambil</h2>
+    </div>
+    <p class="s-desc">Semua keputusan teknis dan bisnis yang sudah final dan disetujui.</p>
+
+    <div class="card">
+        <div class="tw">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px">#</th>
+                    <th>Parameter</th>
+                    <th>Keputusan</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="td-b">1</td>
+                    <td class="td-b">Alert Trigger</td>
+                    <td>PO usia ≥ 21 hari (3 minggu) di FG</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">2</td>
+                    <td class="td-b">Moisture Threshold</td>
+                    <td>≥ 15% = FAIL ❌ &nbsp;|&nbsp; &lt; 15% = PASS ✅</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">3</td>
+                    <td class="td-b">Reminder Interval</td>
+                    <td>3 hari setelah alert jika belum di-check</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">4</td>
+                    <td class="td-b">Jadwal Alert</td>
+                    <td>08:00 WIB setiap hari (cron job)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">5</td>
+                    <td class="td-b">Cutoff Rule</td>
+                    <td>PO lama (>3 minggu saat sistem mulai) → SKIP</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">6</td>
+                    <td class="td-b">Upload Data</td>
+                    <td>Manual via dashboard (upload Excel)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">7</td>
+                    <td class="td-b">Deduplication</td>
+                    <td>Skip row dengan PO + NO.CTN yang sudah ada</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">8</td>
+                    <td class="td-b">WA Gateway</td>
+                    <td>Fonnte (free plan, 1.000 msg/bulan)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">9</td>
+                    <td class="td-b">Nomor WA</td>
+                    <td>Nomor baru (SIM khusus robot, Rp 5-10rb)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">10</td>
+                    <td class="td-b">Akses Dashboard</td>
+                    <td>Beberapa PC via IP internal (192.168.x.x:3000)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">11</td>
+                    <td class="td-b">Scope PO</td>
+                    <td>Semua PO (tanpa filter warehouse/market)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+                <tr>
+                    <td class="td-b">12</td>
+                    <td class="td-b">Biaya Operasional</td>
+                    <td>Rp 0 (Gratis — Fonnte free plan cukup)</td>
+                    <td><span class="badge gr">✅ Final</span></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 5. FILES INVENTORY ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon cy">📁</div>
+        <h2 class="s-title">File & Dokumen yang Ada</h2>
+    </div>
+    <p class="s-desc">Inventaris semua file dalam project saat ini.</p>
+
+    <div class="card">
+        <div class="tw">
+        <table>
+            <thead>
+                <tr><th>File</th><th>Tipe</th><th>Ukuran</th><th>Keterangan</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="td-b">📄 FG_Moisture_Alert_Proposal.html</td>
+                    <td><span class="badge pu">Proposal</span></td>
+                    <td>69 KB</td>
+                    <td>Dokumen proposal untuk presentasi ke manajemen (10 section, vibrant design)</td>
+                </tr>
+                <tr>
+                    <td class="td-b">📊 FG First Carton Tracking.xlsx</td>
+                    <td><span class="badge bl">Data Source</span></td>
+                    <td>778 KB</td>
+                    <td>File Excel sumber data — 5,998 records, 250 PO</td>
+                </tr>
+                <tr>
+                    <td class="td-b">🖼️ NB.png</td>
+                    <td><span class="badge gy">Asset</span></td>
+                    <td>22 KB</td>
+                    <td>Logo New Balance</td>
+                </tr>
+                <tr>
+                    <td class="td-b">🖼️ Parkland.png</td>
+                    <td><span class="badge gy">Asset</span></td>
+                    <td>9 KB</td>
+                    <td>Logo Parkland</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 6. PROGRESS CHECKLIST ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon pk">📋</div>
+        <h2 class="s-title">Progress Checklist</h2>
+    </div>
+
+    <div class="grid-2">
+        <div class="card" style="border-top: 4px solid var(--green);">
+            <div class="card-title" style="color:var(--green);">✅ Sudah Selesai</div>
+            <ul class="checklist">
+                <li><span class="check-icon">✅</span><span>Analisis data Excel (5,998 records, 250 PO)</span></li>
+                <li><span class="check-icon">✅</span><span>Riset Fonnte API (pricing, capability, WA Group)</span></li>
+                <li><span class="check-icon">✅</span><span>Desain arsitektur sistem (Node.js + SQLite + Fonnte)</span></li>
+                <li><span class="check-icon">✅</span><span>Desain database schema (4 tabel)</span></li>
+                <li><span class="check-icon">✅</span><span>Logika deduplication & cutoff rule</span></li>
+                <li><span class="check-icon">✅</span><span>Format notifikasi WA (alert + reminder)</span></li>
+                <li><span class="check-icon">✅</span><span>Desain dashboard UI (overview, table, form)</span></li>
+                <li><span class="check-icon">✅</span><span>Finalisasi semua parameter (12 keputusan)</span></li>
+                <li><span class="check-icon">✅</span><span>Analisis biaya & risiko</span></li>
+                <li><span class="check-icon">✅</span><span>Dokumen proposal HTML untuk manajemen</span></li>
+                <li><span class="check-icon">✅</span><span>Activity report</span></li>
+            </ul>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--amber);">
+            <div class="card-title" style="color:var(--amber);">⏳ Belum Dikerjakan (Next Steps)</div>
+            <ul class="checklist">
+                <li><span class="check-icon">⬜</span><span>Setup Fonnte account & dapatkan API token</span></li>
+                <li><span class="check-icon">⬜</span><span>Beli SIM card baru untuk nomor robot</span></li>
+                <li><span class="check-icon">⬜</span><span>Buat WA Group & invite tim + nomor robot</span></li>
+                <li><span class="check-icon">⬜</span><span>Build backend (Express, SQLite, cron)</span></li>
+                <li><span class="check-icon">⬜</span><span>Build Excel parser + deduplication engine</span></li>
+                <li><span class="check-icon">⬜</span><span>Build alert engine (21-day check)</span></li>
+                <li><span class="check-icon">⬜</span><span>Build reminder engine (3-day overdue)</span></li>
+                <li><span class="check-icon">⬜</span><span>Build Fonnte integration</span></li>
+                <li><span class="check-icon">⬜</span><span>Build web dashboard (HTML/CSS/JS)</span></li>
+                <li><span class="check-icon">⬜</span><span>Testing & deployment ke server internal</span></li>
+                <li><span class="check-icon">⬜</span><span>User training & go-live</span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="s-divider"></div>
+</section>
+
+<!-- ===== 7. NEXT STEPS ===== -->
+<section class="section">
+    <div class="section-head">
+        <div class="s-icon gn">🚀</div>
+        <h2 class="s-title">Next Steps</h2>
+    </div>
+    <p class="s-desc">Langkah-langkah selanjutnya untuk memulai implementasi.</p>
+
+    <div class="grid-3">
+        <div class="card" style="text-align:center; border-top:4px solid var(--blue);">
+            <div style="font-size:2.2rem;margin-bottom:8px;">1️⃣</div>
+            <div style="font-family:'Outfit';font-weight:700;margin-bottom:6px;">Approval Manajemen</div>
+            <div style="color:var(--text-sec);font-size:0.83rem;">
+                Presentasikan proposal ke atasan. Review & approve konsep sistem.
+            </div>
+            <div style="margin-top:10px;"><span class="badge or">⏳ Menunggu</span></div>
+        </div>
+        <div class="card" style="text-align:center; border-top:4px solid var(--green);">
+            <div style="font-size:2.2rem;margin-bottom:8px;">2️⃣</div>
+            <div style="font-family:'Outfit';font-weight:700;margin-bottom:6px;">Persiapan</div>
+            <div style="color:var(--text-sec);font-size:0.83rem;">
+                Beli SIM card baru, register Fonnte, buat WA Group, dapatkan API Token & Group ID.
+            </div>
+            <div style="margin-top:10px;"><span class="badge gy">⬜ Belum mulai</span></div>
+        </div>
+        <div class="card" style="text-align:center; border-top:4px solid var(--purple);">
+            <div style="font-size:2.2rem;margin-bottom:8px;">3️⃣</div>
+            <div style="font-family:'Outfit';font-weight:700;margin-bottom:6px;">Build & Deploy</div>
+            <div style="color:var(--text-sec);font-size:0.83rem;">
+                Build sistem (backend + dashboard), testing, deploy ke server internal, go-live.
+            </div>
+            <div style="margin-top:10px;"><span class="badge gy">⬜ Belum mulai</span></div>
+        </div>
+    </div>
+
+    <div class="callout warning" style="margin-top:18px;">
+        <span class="co-icon">📋</span>
+        <div>
+            <strong>Sebelum mulai build, diperlukan:</strong> Approval manajemen terhadap konsep, 
+            SIM card baru untuk nomor robot, dan akun Fonnte yang sudah aktif dengan API Token.
+        </div>
+    </div>
+</section>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <p style="font-size:1rem;"><strong>📝 Activity & Progress Report</strong></p>
+    <p style="margin-top:8px;"><strong>FG Moisture Alert System</strong> &nbsp;•&nbsp; <strong>Parkland Factory</strong> &nbsp;•&nbsp; <strong>New Balance</strong></p>
+    <p style="margin-top:6px;">Periode: 6 – 7 Agustus 2026 &nbsp;|&nbsp; Disiapkan: 7 Agustus 2026</p>
+    <p style="margin-top:6px;opacity:0.5;">Dokumen internal — rahasia.</p>
+</footer>
+
+</body>
+</html>
