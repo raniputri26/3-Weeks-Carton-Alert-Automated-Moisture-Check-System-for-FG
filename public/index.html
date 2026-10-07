@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -31,7 +31,7 @@
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-view="dashboard">
                     <i data-lucide="layout-dashboard" class="icon"></i>
-                    <span class="nav-text">Dashboard</span>
+                    <span class="nav-text" data-i18n="menu_dashboard">Dashboard</span>
                 </a>
                 <a href="#" class="nav-item" data-view="po-tracking" style="display: none;">
                     <i data-lucide="package-search" class="icon"></i>
@@ -39,11 +39,11 @@
                 </a>
                 <a href="#" class="nav-item" data-view="analytics">
                     <i data-lucide="bar-chart-3" class="icon"></i>
-                    <span class="nav-text">Analytics</span>
+                    <span class="nav-text" data-i18n="menu_analytics">Analytics</span>
                 </a>
                 <a href="#" class="nav-item" data-view="settings">
                     <i data-lucide="sliders-horizontal" class="icon"></i>
-                    <span class="nav-text">Settings</span>
+                    <span class="nav-text" data-i18n="menu_settings">Settings</span>
                 </a>
             </nav>
             
@@ -51,13 +51,12 @@
                 <div class="system-status-card">
                     <div class="status-header">
                         <i data-lucide="server" class="status-icon"></i>
-                        <h4>System Status</h4>
+                        <h4 data-i18n="sys_status">System Status</h4>
                     </div>
-                    <p>WhatsApp Engine & Background Sync are running normally.</p>
+                    <p data-i18n="sys_desc">WhatsApp Engine & Background Sync are running normally.</p>
                     <div class="status-indicator">
                         <span class="pulse-dot"></span>
-                        System Online
-                    </div>
+                        <span data-i18n="sys_online">System Online</span></div>
                 </div>
                 
                 <div class="user-profile">
@@ -66,7 +65,7 @@
                     </div>
                     <div class="user-info">
                         <strong>Yani</strong>
-                        <span>QC Inspector</span>
+                        <span><span data-i18n="role_qc">QC Inspector</span></span>
                     </div>
                     <button class="logout-btn" onclick="logout()" title="Logout" style="margin-left: auto;"><i data-lucide="log-out"></i></button>
                 </div>
@@ -75,150 +74,194 @@
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-            <div class="sticky-top-area">
-                <header class="top-header">
-                    <div class="header-titles">
-                        <h1>Hello, Yani! 👋</h1>
-                        <p>Here's what's happening with your carton moisture today.</p>
-                    </div>
-                    
-                    <div class="header-actions">
-                        <div class="search-bar">
-                            <i data-lucide="search" class="search-icon"></i>
-                            <input type="text" id="searchInput" placeholder="Search anything...">
-                            <span class="search-shortcut">⌘K</span>
-                        </div>
-                        <button class="icon-btn">
+                                      <div class="sticky-top-area">
+                <header class="top-header" style="padding: 1.5rem 3.5rem 0.5rem 3.5rem; align-items: center;">
+                      <div class="header-titles">
+                          <h1><span data-i18n="hello_user">Hello, Yani!</span> ðŸ‘‹</h1>
+                      </div>
+                      
+                      <div class="header-actions" style="gap: 1rem; display: flex; align-items: center;">
+                          <button class="icon-btn">
                             <i data-lucide="bell"></i>
                             <span class="badge-dot"></span>
                         </button>
-                        <input type="file" id="excelUpload" accept=".xlsx, .xls" hidden>
-                        <button class="btn-secondary" onclick="triggerManualAlert()" style="margin-right: 8px; display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.95rem; border-radius: var(--radius-md); transition: var(--transition); background: white; color: var(--c-olive); border: 1px solid var(--c-border); cursor: pointer;" title="Trigger alerts now">
-                            <i data-lucide="play" style="width: 16px; height: 16px; margin-right: 6px;"></i> Run Alert
-                        </button>
-                        
-<button class="btn-outline" onclick="exportExcel()" style="margin-right: 10px; border-color: var(--c-primary); color: var(--c-primary);">
-    <i data-lucide="download" style="width: 16px; height: 16px; margin-right: 6px;"></i> Export Excel
+                          <button onclick="toggleLanguage()" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1rem; font-weight: 600; font-size: 0.875rem; border-radius: var(--radius-pill); background: white; color: var(--c-olive); border: 1px solid var(--c-border); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-right: 8px; transition: all 0.2s;" onmouseover="this.style.background='\#f9f9f8'" onmouseout="this.style.background='white'" title="Switch Language">
+    <i data-lucide="globe" style="width: 16px; height: 16px; margin-right: 6px;"></i> <span id="lang-display" style="width: 20px;">EN</span>
 </button>
-<button class="btn-primary" onclick="document.getElementById('excelUpload').click()">
-                            Upload Data
-                        </button>
-                    </div>
-                </header>
+                      </div>
+                  </header>
 
-                <div class="top-widgets-wrapper" id="view-dashboard-widgets">
-                    <!-- TOP WIDGETS -->
-                    <div class="top-widgets">
-                        <!-- Stats Grid -->
-                        <div class="stats-grid">
-                            <div class="stat-card" onclick="toggleFilter('')" style="cursor:pointer;" title="Click to filter">
-                                <div class="stat-header">
-                                    <div class="stat-icon-wrap" style="background:#e3effa; color:#4278b5;">
-                                        <i data-lucide="hash"></i>
+                <div class="top-widgets-wrapper" id="view-dashboard-widgets" style="padding: 0 3.5rem 0.5rem 3.5rem;">
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                            <div class="horizontal-stat-card" onclick="toggleFilter('')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:#e3effa; color:#4278b5;">
+                                            <i data-lucide="hash" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_total_title">Total PO Tracked</span>
                                     </div>
-                                    <span class="stat-trend trend-up"><i data-lucide="trending-up"></i> +12%</span>
+                                    <span class="stat-desc" data-i18n="stat_total_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Total registered orders</span>
                                 </div>
-                                <div class="stat-data">
-                                    <span class="stat-label">Total PO Tracked</span>
-                                    <strong class="stat-value" id="stat-total">0</strong>
-                                </div>
-                                <div class="stat-chart line-chart-1"></div>
+                                <strong class="horizontal-stat-badge" id="stat-total">0</strong>
                             </div>
-                            
-                            <div class="stat-card" onclick="toggleFilter('WAITING_SI')" style="cursor:pointer;" title="Click to filter">
-                                <div class="stat-header">
-                                    <div class="stat-icon-wrap bg-peach">
-                                        <i data-lucide="clock"></i>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('WAITING_SI')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:var(--c-peach); color:var(--c-text-main);">
+                                            <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_waiting_title">Waiting SI</span>
                                     </div>
-                                    <span class="stat-trend trend-neutral"><i data-lucide="minus"></i> 0%</span>
+                                    <span class="stat-desc" data-i18n="stat_waiting_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Awaiting SI to start tracking</span>
                                 </div>
-                                <div class="stat-data">
-                                    <span class="stat-label">Waiting SI</span>
-                                    <strong class="stat-value" id="stat-waiting-si">0</strong>
-                                </div>
-                                <div class="stat-chart line-chart-2"></div>
+                                <strong class="horizontal-stat-badge" id="stat-waiting-si">0</strong>
                             </div>
-
-                            <div class="stat-card" onclick="toggleFilter('WATCHING')" style="cursor:pointer;" title="Click to filter">
-                                <div class="stat-header">
-                                    <div class="stat-icon-wrap bg-peach">
-                                        <i data-lucide="eye"></i>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('WATCHING')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:var(--c-peach); color:var(--c-text-main);">
+                                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_watching_title">Watching</span>
                                     </div>
-                                    <span class="stat-trend trend-up"><i data-lucide="trending-up"></i> +5%</span>
+                                    <span class="stat-desc" data-i18n="stat_watching_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Active in 3-week window</span>
                                 </div>
-                                <div class="stat-data">
-                                    <span class="stat-label">Watching</span>
-                                    <strong class="stat-value" id="stat-watching">0</strong>
-                                </div>
-                                <div class="stat-chart line-chart-2"></div>
+                                <strong class="horizontal-stat-badge" id="stat-watching">0</strong>
                             </div>
-
-                            <div class="stat-card" onclick="toggleFilter('ALERTED')" style="cursor:pointer;" title="Click to filter">
-                                <div class="stat-header">
-                                    <div class="stat-icon-wrap bg-rose">
-                                        <i data-lucide="alert-triangle"></i>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('ALERTED')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:var(--c-rose); color:var(--c-text-main);">
+                                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_alerted_title">Alerted</span>
                                     </div>
-                                    <span class="stat-trend trend-down"><i data-lucide="trending-down"></i> -2%</span>
+                                    <span class="stat-desc" data-i18n="stat_alerted_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Reached 3 weeks, needs check</span>
                                 </div>
-                                <div class="stat-data">
-                                    <span class="stat-label">Alerted</span>
-                                    <strong class="stat-value" id="stat-alerted">0</strong>
-                                </div>
-                                <div class="stat-chart line-chart-3"></div>
+                                <strong class="horizontal-stat-badge" id="stat-alerted">0</strong>
                             </div>
-
-                            
-<div class="stat-card" onclick="toggleFilter('CHECKED')" style="cursor:pointer;" title="Click to filter">
-    <div class="stat-header">
-        <div class="stat-icon-wrap" style="background:#e6fae6; color:#2d8a2d;">
-            <i data-lucide="check-circle"></i>
-        </div>
-        <span class="stat-trend trend-up" style="color:var(--c-success)"><i data-lucide="trending-up"></i> +3%</span>
-    </div>
-    <div class="stat-data">
-        <span class="stat-label">Checked</span>
-        <strong class="stat-value" id="stat-checked">0</strong>
-    </div>
-    <div class="stat-chart line-chart-2"></div>
-</div>
-<div class="stat-card" onclick="toggleFilter('OVERDUE')" style="cursor:pointer;" title="Click to filter">
-                                <div class="stat-header">
-                                    <div class="stat-icon-wrap" style="background:#fae3e3; color:#b54242;">
-                                        <i data-lucide="x-circle"></i>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('EXPORTED')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:#f3e8fd; color:#6b42b5;">
+                                            <i data-lucide="plane" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_exported_title">Exported</span>
                                     </div>
-                                    <span class="stat-trend trend-up" style="color:var(--c-danger)"><i data-lucide="trending-up"></i> +1%</span>
+                                    <span class="stat-desc" data-i18n="stat_exported_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Exported & excluded</span>
                                 </div>
-                                <div class="stat-data">
-                                    <span class="stat-label">Overdue</span>
-                                    <strong class="stat-value" id="stat-overdue">0</strong>
+                                <strong class="horizontal-stat-badge" id="stat-exported">0</strong>
+                            </div>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('CHECKED')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:#e6fae6; color:#2d8a2d;">
+                                            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_checked_title">Checked</span>
+                                    </div>
+                                    <span class="stat-desc" data-i18n="stat_checked_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Moisture checked</span>
                                 </div>
-                                <div class="stat-chart line-chart-4"></div>
+                                <strong class="horizontal-stat-badge" id="stat-checked">0</strong>
+                            </div>
+                            <div class="horizontal-stat-card" onclick="toggleFilter('OVERDUE')">
+                                <div style="display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden; flex: 1;">
+                                    <div class="horizontal-stat-left">
+                                        <div class="horizontal-icon-wrap" style="background:#fae3e3; color:#b54242;">
+                                            <i data-lucide="x-circle" style="width: 16px; height: 16px;"></i>
+                                        </div>
+                                        <span data-i18n="stat_overdue_title">Overdue</span>
+                                    </div>
+                                    <span class="stat-desc" data-i18n="stat_overdue_desc" style="font-size: 0.65rem; color: #8b8a86; padding-left: 2.75rem; white-space: nowrap; font-weight: 500;">Unchecked 3 days post-alert</span>
+                                </div>
+                                <strong class="horizontal-stat-badge" id="stat-overdue">0</strong>
                             </div>
                         </div>
-                    </div>
+                                                <!-- Marquee Running Text -->
+                        <div class="marquee-wrapper">
+                            <div class="marquee-content" id="marquee-ticker">
+                                <span style="color: #a0aec0; font-size: 0.75rem;">Loading live activity...</span>
+                            </div>
+                        </div>
+                        <div class="unified-filter-bar">
+                            <!-- Left: Search and Dropdowns -->
+                            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; background: white; border: 1px solid var(--c-border); border-radius: var(--radius-pill); padding: 0.35rem 1rem;">
+                                    <i data-lucide="search" style="color: var(--c-text-muted); width: 16px; margin-right: 8px;"></i>
+                                    <input type="text" id="searchInput" placeholder="Search by ID, batch..." data-i18n-ph="search_placeholder" style="border: none; outline: none; font-size: 0.85rem; background: transparent; width: 200px;">
+                                </div>
+                                
+                                <select id="filterStatus" style="border: 1px solid var(--c-border); background: white; padding: 0.4rem 1rem; border-radius: var(--radius-pill); font-size: 0.85rem; color: var(--c-text-main); outline: none; cursor: pointer;">
+                                    <option value="" data-i18n="filter_all">All Status</option>
+                                    <option value="WAITING_SI">Waiting SI</option>
+                                    <option value="WATCHING">Watching</option>
+                                    <option value="ALERTED">Alerted</option>
+                                    <option value="CHECKED">Checked</option>
+                                    <option value="EXPORTED">Exported</option>
+                                    <option value="OVERDUE">Overdue</option>
+                                </select>
+                                
+                                <div style="border-left: 1px solid var(--c-border); height: 24px;"></div>
+                                
+                                <!-- Date Filter -->
+                                <div style="display: flex; align-items: center; gap: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                            <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--c-olive);"></i>
+                            <select id="global-date-type" style="border: none; outline: none; background: transparent url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"%233e4b3b\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg>') no-repeat right center; padding-right: 1.25rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); color: var(--c-olive); font-size: 0.85rem; appearance: none; -webkit-appearance: none;">
+                                <option value="" data-i18n="date_all">All Time</option>
+                                <option value="DAY" data-i18n="date_day">DAY</option>
+                                <option value="WEEK" data-i18n="date_week">WEEK</option>
+                                <option value="MONTH" data-i18n="date_month">MONTH</option>
+                                <option value="RANGE" data-i18n="date_range">RANGE</option>
+                            </select>
+                            
+                            <div id="input-day-container" style="display: none; border-left: 1px solid var(--c-border); padding-left: 0.5rem; margin-left: 0.25rem;">
+                                <input type="date" id="global-day-value" style="border: none; outline: none; padding: 0.25rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-text-main); cursor: pointer; font-weight: 500;">
+                            </div>
+                            
+                            <div id="input-week-container" style="display: none; border-left: 1px solid var(--c-border); padding-left: 0.5rem; margin-left: 0.25rem;">
+                                <input type="week" id="global-week-value" style="border: none; outline: none; padding: 0.25rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-text-main); cursor: pointer; font-weight: 500;">
+                            </div>
+
+                            <div id="input-month-container" style="display: none; border-left: 1px solid var(--c-border); padding-left: 0.5rem; margin-left: 0.25rem;">
+                                <input type="month" id="global-month-value" style="border: none; outline: none; padding: 0.25rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-text-main); cursor: pointer; font-weight: 500;">
+                            </div>
+
+                            <div id="global-date-inputs" style="display: none; align-items: center; gap: 0.5rem; border-left: 1px solid var(--c-border); padding-left: 0.5rem; margin-left: 0.25rem;">
+                                <input type="date" id="global-start-date" style="border: none; outline: none; padding: 0.25rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-text-main); cursor: pointer; font-weight: 500;">
+                                <span style="color: var(--c-olive); font-size: 0.8rem; font-weight: 600;">TO</span>
+                                <input type="date" id="global-end-date" style="border: none; outline: none; padding: 0.25rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-text-main); cursor: pointer; font-weight: 500;">
+                            </div>
+                        </div>
+                            </div>
+                            
+                            <!-- Right: Actions -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                                <input type="file" id="excelUpload" accept=".xlsx, .xls" hidden>
+                                <button onclick="triggerManualAlert()" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.25rem; font-weight: 600; font-size: 0.875rem; border-radius: var(--radius-pill); background: white; color: var(--c-olive); border: 1px solid var(--c-border); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-right: 8px; transition: all 0.2s;" onmouseover="this.style.background=\'#f9f9f8\'" onmouseout="this.style.background=\'white\'" title="Trigger alerts now">
+    <i data-lucide="play" style="width: 16px; height: 16px; margin-right: 6px;"></i> <span data-i18n="btn_run_alert">Run Alert</span>
+</button>
+                                <button class="btn-primary" onclick="document.getElementById('excelUpload').click()">
+                            <span data-i18n="btn_upload">Upload Data</span>
+                        </button>
+                                <button onclick="exportExcel()" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.25rem; font-weight: 600; font-size: 0.875rem; border-radius: var(--radius-pill); background: white; color: var(--c-olive); border: 1px solid var(--c-border); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-right: 8px; transition: all 0.2s;" onmouseover="this.style.background=\'#f9f9f8\'" onmouseout="this.style.background=\'white\'">
+    <i data-lucide="download" style="width: 16px; height: 16px; margin-right: 6px;"></i> <span data-i18n="btn_export">Export Excel</span>
+</button>
+                            </div>
+                        </div>
                 </div>
             </div>
             
-            <div class="main-content-scroll">
-                
-
-            </div>
-
             <div class="content-wrapper">
+
                 
                 <!-- DASHBOARD VIEW -->
                 <div class="table-section view-section" id="view-dashboard-content">
                     <div class="section-header">
                         <h2>Recent Orders</h2>
                         <div class="table-filters">
-                            <button class="btn-text" onclick="switchView('po-tracking')">View All Orders</button>
-                            <select id="filterStatus" class="elegant-select">
-                                <option value="">Filter: All Status</option>
-                                <option value="WAITING_SI">Waiting SI</option>
-                                <option value="WATCHING">Watching</option>
-                                <option value="ALERTED">Alerted</option>
-                                <option value="CHECKED">Checked</option>
-                            </select>
+                            <button class="btn-text" onclick="switchView('po-tracking')"><span data-i18n="view_all">View All Orders</span></button>
+                            
                         </div>
                     </div>
                     
@@ -231,13 +274,14 @@
                                     <th>Status</th>
                                     <th>Due / Age</th>
                                     <th>FG In (SI)</th>
+                                    <th>Export Date</th>
                                     <th>Moisture</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="poTableBody">
                                 <tr>
-                                    <td colspan="7" class="text-center" style="padding:4rem; color:#888;">
+                                    <td colspan="8" class="text-center" style="padding:4rem; color:#888;">
                                         <i data-lucide="loader-2" class="spin-icon"></i> Loading data...
                                     </td>
                                 </tr>
@@ -263,7 +307,7 @@
                         <!-- Advanced Filters -->
                         <div style="display: flex; gap: 1rem; margin-top: 1rem; align-items: center; flex-wrap: wrap;">
                             <div style="position: relative; flex: 1; min-width: 250px;">
-                                <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--c-text-muted); width: 18px;"></i>
+                                <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--c-olive); width: 18px;"></i>
                                 <input type="text" placeholder="Search PO, Article, or Customer..." class="elegant-input" style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 8px; border: 1px solid var(--c-border);">
                             </div>
                             
@@ -280,9 +324,10 @@
                                 <option value="WATCHING">Watching</option>
                                 <option value="ALERTED">Alerted</option>
                                 <option value="CHECKED">Checked</option>
+                                <option value="EXPORTED">Exported</option>
                             </select>
                             
-                            <input type="date" class="elegant-input" style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border); color: var(--c-text-muted);">
+                            <input type="date" class="elegant-input" style="padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border); color: var(--c-olive);">
                             
                             <button class="btn-primary" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem;"><i data-lucide="download" style="width: 18px;"></i> Export</button>
                         </div>
@@ -308,7 +353,7 @@
                     </div>
                     
                     <div style="background: white; border-top: 1px solid var(--c-border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
-                        <span id="poMasterShowingText" style="color: var(--c-text-muted); font-size: 0.9rem;">Showing results</span>
+                        <span id="poMasterShowingText" style="color: var(--c-olive); font-size: 0.9rem;">Showing results</span>
                         <div style="display: flex; gap: 0.5rem;" id="poMasterPagination">
                         </div>
                     </div>
@@ -319,10 +364,26 @@
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                         <h2 style="font-size: 1.75rem; color: var(--c-olive);">Performance Analytics</h2>
-                        <select class="elegant-select" style="background: white; border: 1px solid var(--c-border); padding: 0.5rem 1rem; border-radius: 8px;">
-                            <option>Last 6 Months</option>
-                            <option>This Year</option>
-                        </select>
+                    </div>
+
+                    <!-- Top Metrics Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;">
+                        <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.5rem;">
+                            <span style="color: var(--c-olive); font-size: 0.9rem; font-weight: 500;">FG In (Period)</span>
+                            <span id="analytics-fg-month" style="font-size: 2rem; font-family: var(--font-serif); font-weight: 700; color: var(--c-olive);">0</span>
+                        </div>
+                        <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.5rem;">
+                            <span style="color: var(--c-olive); font-size: 0.9rem; font-weight: 500;">Waiting SI</span>
+                            <span id="analytics-waiting-si" style="font-size: 2rem; font-family: var(--font-serif); font-weight: 700; color: var(--c-peach-text);">0</span>
+                        </div>
+                        <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.5rem;">
+                            <span style="color: var(--c-olive); font-size: 0.9rem; font-weight: 500;">Over 3 Weeks Old</span>
+                            <span id="analytics-over-3w" style="font-size: 2rem; font-family: var(--font-serif); font-weight: 700; color: var(--c-danger);">0</span>
+                        </div>
+                        <div class="chart-card" style="background: white; padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.5rem;">
+                            <span style="color: var(--c-olive); font-size: 0.9rem; font-weight: 500;">Exported Total</span>
+                            <span id="analytics-exported" style="font-size: 2rem; font-family: var(--font-serif); font-weight: 700; color: #6b42b5;">0</span>
+                        </div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-bottom: 3rem;">
@@ -361,7 +422,7 @@
                         <h2 style="font-size: 1.75rem; color: var(--c-olive);">System Configuration</h2>
                     </div>
                     
-                    <div style="padding-bottom: 3rem; max-width: 800px;">
+                    <div style="padding-bottom: 3rem; max-width: 1200px;">
                         <div style="background: white; padding: 2.5rem; border-radius: var(--radius-lg); border: 1px solid var(--c-border); box-shadow: var(--shadow-sm); margin-bottom: 2rem;">
                             <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--c-olive); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                                 <i data-lucide="bell-ring" style="color: var(--c-peach-text);"></i> Alert Rules
@@ -369,12 +430,12 @@
                             <div class="form-group" style="margin-bottom: 1.5rem;">
                                 <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Trigger Days (Usia di FG)</label>
                                 <input type="number" value="21" class="elegant-input" style="width: 150px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
-                                <small style="display: block; color: var(--c-text-muted); margin-top: 0.5rem;">Jumlah hari setelah SI Date untuk memicu status ALERTED.</small>
+                                <small style="display: block; color: var(--c-olive); margin-top: 0.5rem;">Jumlah hari setelah SI Date untuk memicu status ALERTED.</small>
                             </div>
                             <div class="form-group">
                                 <label style="display: block; font-weight: 500; margin-bottom: 0.5rem;">Moisture Threshold (%)</label>
                                 <input type="number" value="15" class="elegant-input" style="width: 150px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--c-border);">
-                                <small style="display: block; color: var(--c-text-muted); margin-top: 0.5rem;">Batas maksimum persentase moisture untuk lulus (PASS).</small>
+                                <small style="display: block; color: var(--c-olive); margin-top: 0.5rem;">Batas maksimum persentase moisture untuk lulus (PASS).</small>
                             </div>
                         </div>
 
@@ -397,7 +458,7 @@
                     </div>
                 </div>
 
-            </div>
+            
         </main>
     </div>
 
@@ -464,5 +525,8 @@
         // Initialize Lucide icons
         lucide.createIcons();
     </script>
+
+<script src="/js/i18n.js"></script>
 </body>
+
 </html>

@@ -116,15 +116,142 @@ function setupEventListeners() {
     els.mcValue.addEventListener('input', updateMoisturePreview);
     
     els.moistureForm.addEventListener('submit', handleMoistureSubmit);
+
+        // Global Date Filters
+    const dateType = document.getElementById('global-date-type');
+    
+    const containerDay = document.getElementById('input-day-container');
+    const containerWeek = document.getElementById('input-week-container');
+    const containerMonth = document.getElementById('input-month-container');
+    const containerRange = document.getElementById('global-date-inputs');
+    
+    const valDay = document.getElementById('global-day-value');
+    const valWeek = document.getElementById('global-week-value');
+    const valMonth = document.getElementById('global-month-value');
+    const valStart = document.getElementById('global-start-date');
+    const valEnd = document.getElementById('global-end-date');
+    
+    function refreshAllData() {
+        loadStats();
+        loadPOs();
+        initCharts();
+    }
+    
+    function updateDateUI() {
+        if(!dateType) return;
+        const v = dateType.value;
+        containerDay.style.display = v === 'DAY' ? 'block' : 'none';
+        containerWeek.style.display = v === 'WEEK' ? 'block' : 'none';
+        containerMonth.style.display = v === 'MONTH' ? 'block' : 'none';
+        containerRange.style.display = v === 'RANGE' ? 'flex' : 'none';
+        
+        // initialize defaults if empty
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        
+        if (v === 'DAY' && !valDay.value) valDay.value = `${yyyy}-${mm}-${dd}`;
+        if (v === 'MONTH' && !valMonth.value) valMonth.value = `${yyyy}-${mm}`;
+        if (v === 'WEEK' && !valWeek.value) {
+            // approximation for current week
+            const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+            valWeek.value = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+        }
+    }
+
+    if (dateType) {
+        dateType.addEventListener('change', () => {
+            updateDateUI();
+            refreshAllData(); 
+        });
+    }
+    
+    [valDay, valWeek, valMonth].forEach(el => {
+        if(el) el.addEventListener('change', refreshAllData);
+    });
+    
+    if (valStart && valEnd) {
+        valStart.addEventListener('change', () => { if(valEnd.value) refreshAllData(); });
+        valEnd.addEventListener('change', () => { if(valStart.value) refreshAllData(); });
+    }
+    
+    // Init UI
+    if (dateType) updateDateUI();
+} // Data Fetching
+
+function getWeekDateRange(year, week) {
+    const simple = new Date(year, 0, 1 + (week - 1) * 7);
+    const dow = simple.getDay();
+    const ISOweekStart = simple;
+    if (dow <= 4)
+        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+    else
+        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+    
+    const start = new Date(ISOweekStart);
+    const end = new Date(ISOweekStart);
+    end.setDate(start.getDate() + 6);
+    
+    return {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0]
+    };
 }
 
-// Data Fetching
+function buildUrlWithDateFilters(basePath) {
+    let url = `${API_BASE}${basePath}`;
+    const typeEl = document.getElementById('global-date-type');
+    
+    let params = new URLSearchParams();
+    if (typeEl && typeEl.value) {
+        const v = typeEl.value;
+        params.append('type', v);
+        
+        if (v === 'DAY') {
+            const el = document.getElementById('global-day-value');
+            if (el && el.value) params.append('value', el.value);
+        } else if (v === 'MONTH') {
+            const el = document.getElementById('global-month-value');
+            if (el && el.value) params.append('value', el.value);
+        } else if (v === 'WEEK') {
+            const el = document.getElementById('global-week-value');
+            if (el && el.value) {
+                const parts = el.value.split('-W');
+                if (parts.length === 2) {
+                    const range = getWeekDateRange(parseInt(parts[0]), parseInt(parts[1]));
+                    params.append('start', range.start);
+                    params.append('end', range.end);
+                }
+            }
+        } else if (v === 'RANGE') {
+            const startEl = document.getElementById('global-start-date');
+            const endEl = document.getElementById('global-end-date');
+            if (startEl && startEl.value && endEl && endEl.value) {
+                params.append('start', startEl.value);
+                params.append('end', endEl.value);
+            }
+        }
+    }
+    const q = params.toString();
+    if (q) {
+        url += (url.includes('?') ? '&' : '?') + q;
+    }
+    return url;
+}
+
 async function loadStats() {
     try {
-        const res = await fetch(`${API_BASE}/dashboard/stats`);
+        const res = await fetch(buildUrlWithDateFilters('/dashboard/stats'));
         if (!res.ok) return;
         const responseData = await res.json();
-        const stats = responseData.data || {};
+        // New structure: { current: {...}, trend: {...} }
+        const stats = responseData.data.current || responseData.data || {};
+        const trend = responseData.data.trend || {};
         
         els.stats.total.textContent = stats.TOTAL || 0;
         els.stats.waitingSi.textContent = stats.WAITING_SI || 0;
@@ -133,6 +260,49 @@ async function loadStats() {
         els.stats.checked.textContent = stats.CHECKED || 0;
         els.stats.overdue.textContent = stats.OVERDUE || 0;
         
+        const statExported = document.getElementById('stat-exported');
+        if (statExported) statExported.textContent = stats.EXPORTED || 0;
+        
+        // Helper to update trend spans
+        const updateTrendSpan = (id, percent, invertGoodBad = false) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            // Reinitialize lucide icons for dynamic updates
+            let icon = 'minus';
+            let colorCls = 'trend-neutral';
+            let sign = '';
+            
+            if (percent > 0) {
+                icon = 'trending-up';
+                sign = '+';
+                colorCls = invertGoodBad ? 'trend-down' : 'trend-up';
+                // Override CSS text color for extreme cases where we used inline styles
+                el.style.color = invertGoodBad ? 'var(--c-danger)' : 'var(--c-success)';
+            } else if (percent < 0) {
+                icon = 'trending-down';
+                sign = ''; // negative already has sign
+                colorCls = invertGoodBad ? 'trend-up' : 'trend-down';
+                el.style.color = invertGoodBad ? 'var(--c-success)' : 'var(--c-danger)';
+            } else {
+                el.style.color = ''; // reset inline color
+            }
+            
+            el.className = `stat-trend ${colorCls}`;
+            el.innerHTML = `<i data-lucide="${icon}"></i> ${sign}${percent}%`;
+        };
+
+        updateTrendSpan('trend-total', trend.TOTAL || 0);
+        updateTrendSpan('trend-waiting-si', trend.WAITING_SI || 0);
+        updateTrendSpan('trend-watching', trend.WATCHING || 0);
+        // Overdue and Alerted are bad, so going up is red (invert = true)
+        updateTrendSpan('trend-alerted', trend.ALERTED || 0, true);
+        updateTrendSpan('trend-overdue', trend.OVERDUE || 0, true);
+        updateTrendSpan('trend-checked', trend.CHECKED || 0);
+        updateTrendSpan('trend-exported', trend.EXPORTED || 0);
+
+        if (window.lucide) window.lucide.createIcons();
+
         if (stats.SKIPPED > 0) {
             // we don't have card-skipped anymore in the new UI, so skip this safely
             const skippedCard = document.getElementById('card-skipped');
@@ -189,7 +359,7 @@ async function loadLastUploadInfo() {
 // Rendering
 function renderPOTable() {
     if (poDataList.length === 0) {
-        els.tableBody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:4rem; color:#888;">No records found.</td></tr>`;
+        els.tableBody.innerHTML = `<tr><td colspan="8" class="text-center" style="padding:4rem; color:#888;">No records found.</td></tr>`;
         const showingText = document.getElementById('showingText');
         if (showingText) showingText.textContent = `Showing 0 results`;
         return;
@@ -210,6 +380,7 @@ function renderPOTable() {
         'CHECKED': { cls: 'badge-blue', txt: 'Checked', icon: 'check-circle-2' },
         'OVERDUE': { cls: 'badge-rose', txt: 'Overdue', icon: 'x-circle' },
         'SKIPPED': { cls: 'badge-gray', txt: 'Skipped', icon: 'ban' },
+        'EXPORTED': { cls: 'badge-purple', txt: 'Exported', icon: 'plane' },
     };
 
     // Render Dashboard Table
@@ -234,6 +405,7 @@ function renderPOTable() {
         }
 
         const fgInDate = po.si_date ? formatDate(po.si_date) : '<span style="color:#8b8a86;">Not Set</span>';
+        const exportDate = po.export_date ? formatDate(po.export_date) : '<span style="color:#8b8a86;">-</span>';
         
         // Due logic
         const usia = po.si_date ? calculateAge(po.si_date) : 0;
@@ -253,6 +425,7 @@ function renderPOTable() {
                 <td>${badge}</td>
                 <td>${dueBox}</td>
                 <td>${fgInDate}</td>
+                <td>${exportDate}</td>
                 <td>${moistureDisplay}</td>
                 <td>${actionBtn}</td>
             </tr>
@@ -316,6 +489,7 @@ function renderPOTable() {
     if (btnPrev) btnPrev.disabled = currentPage === 1;
     if (btnNext) btnNext.disabled = currentPage === totalPages;
 
+    renderMarquee(currentData);
     // Initialize Lucide icons on newly rendered table rows
     if (window.lucide) {
         window.lucide.createIcons();
@@ -469,7 +643,7 @@ async function openDetailModal(poNumber) {
             : '<span class="text-muted">No carton data</span>';
 
         let historyHtml = '<p class="text-muted">No moisture check history.</p>';
-        if (po.moisture_checks && po.moisture_checks.length > 0) {
+        if (po.checks && po.checks.length > 0) {
             historyHtml = `
                 <table class="history-table">
                     <thead>
@@ -482,7 +656,7 @@ async function openDetailModal(poNumber) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${po.moisture_checks.map(mc => `
+                        ${po.checks.map(mc => `
                             <tr>
                                 <td>${formatDateTime(mc.check_date)}</td>
                                 <td>${mc.checked_by}</td>
@@ -503,55 +677,140 @@ async function openDetailModal(poNumber) {
             'CHECKED': { cls: 'badge-blue', txt: 'Checked' },
             'OVERDUE': { cls: 'badge-rose', txt: 'Overdue' },
             'SKIPPED': { cls: 'badge-gray', txt: 'Skipped' },
+            'EXPORTED': { cls: 'badge-purple', txt: 'Exported' },
         };
         const statusBadge = mapStatus[po.status] ? `<span class="badge ${mapStatus[po.status].cls}">${mapStatus[po.status].txt}</span>` : po.status;
         const poStatus = mapStatus[po.status] || { cls: 'badge-gray', txt: po.status };
         const siDateStr = po.si_date ? formatDate(po.si_date) : '-';
 
+        
+        
+        const mcResult = po.checks && po.checks.length > 0 ? po.checks[0].result : null;
+        let mainBadge = statusBadge;
+        
+
+        // Timeline Logic nodes: FG IN -> SI Date -> Moisture 1 -> Moisture 2 -> Exported
+        const fgInDate = po.start_in_fg ? formatDate(po.start_in_fg) : (po.created_at ? formatDateTime(po.created_at).split(' ')[0] : '-');
+        const siDate = po.si_date ? formatDate(po.si_date) : '-';
+        
+        let m1Date = '-', m2Date = '-';
+        let checks = po.checks || [];
+        // DB returns ORDER BY check_date DESC. So [length-1] is the first check, [length-2] is second.
+        if (checks.length > 0) m1Date = formatDateTime(checks[checks.length - 1].check_date);
+        if (checks.length > 1) m2Date = formatDateTime(checks[checks.length - 2].check_date);
+        
+        const exportDateStr = po.export_date ? formatDate(po.export_date) : '-';
+
+        let t1_cls = fgInDate !== '-' ? 'active-solid-green' : '';
+        let t2_cls = siDate !== '-' ? 'active-orange' : '';
+        let t3_cls = m1Date !== '-' ? 'active-blue' : '';
+        let t4_cls = m2Date !== '-' ? 'active-blue' : '';
+        let t5_cls = exportDateStr !== '-' ? 'active-purple' : '';
+
         body.innerHTML = `
-            <div class="detail-header">
-                <div>
-                    <h2>PO #${po.po_number}</h2>
-                    <p style="color: var(--c-text-muted); margin-top:0.25rem;">${po.article || '-'}</p>
+            <div class="modern-modal-body">
+                <div class="detail-top-card">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h2>${po.po_number} ${mainBadge}</h2>
+                            <div class="detail-subtitle">
+                                Warehouse: <span style="color:#ed8936; font-weight:700;">${po.warehouse || '-'}</span>
+                            </div>
+                        </div>
+                        <div class="detail-top-right">
+                            
+                            <button class="btn-close-new" onclick="closeModal('detailModal')"><i data-lucide="x" style="width:20px;"></i></button>
+                        </div>
+                    </div>
                 </div>
-                <span class="badge ${poStatus.cls}">${poStatus.txt}</span>
-            </div>
 
-            <div class="detail-grid">
-                <div class="d-item">
-                    <span class="d-label">MARKET</span>
-                    <strong class="d-value">${po.market || '-'}</strong>
+                <div class="timeline-box">
+                    <div class="timeline-title">
+                        <i data-lucide="calendar" style="width:16px;"></i> PROCESS TIMELINE
+                    </div>
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-step">
+                            <div class="step-label">FG IN</div>
+                            <div class="step-dot ${t1_cls}"></div>
+                            <div class="step-date" style="color: ${t1_cls ? '#48bb78' : '#a0aec0'};">${fgInDate}</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-label">SI DATE</div>
+                            <div class="step-dot ${t2_cls}"></div>
+                            <div class="step-date" style="color: ${t2_cls ? '#ed8936' : '#a0aec0'};">${siDate}</div>
+                        </div>
+                        <div class="timeline-step">
+                            <div class="step-label"><div style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span>Moisture 1</span><span style="font-size:0.6rem;font-weight:500;">(3 weeks)</span></div></div>
+                            <div class="step-dot ${t3_cls}"></div>
+                            <div class="step-date" style="color: ${t3_cls ? '#4299e1' : '#a0aec0'};">${m1Date.split(' ').slice(0,3).join(' ') || '-'}</div>
+                        </div>
+                        ${m2Date !== '-' ? `
+                        <div class="timeline-step">
+                            <div class="step-label">Moisture 2</div>
+                            <div class="step-dot ${t4_cls}"></div>
+                            <div class="step-date" style="color: ${t4_cls ? '#4299e1' : '#a0aec0'};">${m2Date.split(' ').slice(0,3).join(' ') || '-'}</div>
+                        </div>
+                        ` : ''}
+                        <div class="timeline-step">
+                            <div class="step-label">Exported</div>
+                            <div class="step-dot ${t5_cls}"></div>
+                            <div class="step-date" style="color: ${t5_cls ? '#9f7aea' : '#a0aec0'};">${exportDateStr}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="d-item">
-                    <span class="d-label">CUSTOMER</span>
-                    <strong class="d-value">${po.customer || '-'}</strong>
-                </div>
-                <div class="d-item">
-                    <span class="d-label">WAREHOUSE</span>
-                    <strong class="d-value">${po.warehouse || '-'}</strong>
-                </div>
-                <div class="d-item">
-                    <span class="d-label">FG IN (SI DATE)</span>
-                    <strong class="d-value">${siDateStr}</strong>
-                </div>
-                <div class="d-item">
-                    <span class="d-label">TOTAL QTY ORDER</span>
-                    <strong class="d-value">${po.qty_order ? po.qty_order.toLocaleString() + ' pairs' : '-'}</strong>
-                </div>
-            </div>
 
-            <div class="history-section" style="margin-bottom: 2rem;">
-                <h3>Carton Numbers (${po.cartons ? po.cartons.length : 0})</h3>
-                <div class="carton-tags">
-                    ${cartonsHtml}
+                <div class="appendix-box">
+                    <div class="appendix-title">
+                        <i data-lucide="box" style="width:16px;"></i> Appendix Data
+                    </div>
+                    <div class="appendix-grid">
+                        <div class="app-item">
+                            <span class="app-label">PO Number</span>
+                            <span class="app-val" style="color:#4299e1;">${po.po_number}</span>
+                        </div>
+                        <div class="app-item">
+                            <span class="app-label">Article/Style</span>
+                            <span class="app-val">${po.article || '-'}</span>
+                        </div>
+                        <div class="app-item">
+                            <span class="app-label">Market</span>
+                            <span class="app-val">${po.market || '-'}</span>
+                        </div>
+                        <div class="app-item">
+                            <span class="app-label">Customer</span>
+                            <span class="app-val">${po.customer || '-'}</span>
+                        </div>
+                        <div class="app-item">
+                            <span class="app-label">Total QTY Order</span>
+                            <span class="app-val">${po.qty_order ? po.qty_order.toLocaleString() : '-'}</span>
+                        </div>
+                        <div class="app-item">
+                            <span class="app-label">Total Cartons</span>
+                            <span class="app-val">${po.cartons ? po.cartons.length : 0}</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="history-section">
-                <h3>Moisture Check History</h3>
-                ${historyHtml}
+                <div class="results-box">
+                    <div class="results-title">
+                        <i data-lucide="flask-conical" style="width:16px;"></i> Moisture Check Results
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <span class="app-label" style="display:block; margin-bottom:0.5rem;">CARTON NUMBERS SCANNED</span>
+                        <div class="carton-tags">
+                            ${cartonsHtml}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="app-label" style="display:block; margin-bottom:0.5rem;">HISTORY LOG</span>
+                        ${historyHtml}
+                    </div>
+                </div>
             </div>
         `;
+        if (window.lucide) window.lucide.createIcons();
+
     } catch (err) {
         body.innerHTML = `<div class="text-center text-fail" style="padding: 2rem;">Failed to load PO details.</div>`;
     }
@@ -590,22 +849,23 @@ function closeModal(modalId) {
 // Helpers
 function getStatusBadge(status) {
     const map = {
-        'WAITING_SI': { cls: 'waiting', icon: '⏸️', text: 'Waiting SI' },
-        'WATCHING': { cls: 'watching', icon: '⏳', text: 'Watching' },
-        'ALERTED': { cls: 'alerted', icon: '🔔', text: 'Alerted' },
+        'WAITING_SI': { cls: 'waiting', icon: '⏱️', text: 'Waiting SI' },
+        'WATCHING': { cls: 'watching', icon: '👁️', text: 'Watching' },
+        'ALERTED': { cls: 'alerted', icon: '⚠️', text: 'Alerted' },
         'CHECKED': { cls: 'checked', icon: '✅', text: 'Checked' },
         'OVERDUE': { cls: 'overdue', icon: '❌', text: 'Overdue' },
-        'SKIPPED': { cls: 'skipped', icon: '🚫', text: 'Skipped' },
+        'SKIPPED': { cls: 'skipped', icon: '⏭️', text: 'Skipped' },
+        'EXPORTED': { cls: 'exported', icon: '✈️', text: 'Exported' },
     };
-    const s = map[status] || { cls: 'waiting', icon: '❓', text: status };
+    const s = map[status] || { cls: 'waiting', icon: '➖', text: status };
     return `<span class="badge badge-${s.cls}">${s.icon} ${s.text}</span>`;
 }
 
 function getMoistureDisplay(result, value) {
-    if (result === 'PASS') return `<span class="text-pass">✅ ${value}% Pass</span>`;
-    if (result === 'FAIL') return `<span class="text-fail">❌ ${value}% Fail</span>`;
-    if (result === 'PENDING') return `<span class="text-pending">⏳ Pending</span>`;
-    return `<span class="text-na">— N/A</span>`;
+    if (result === 'PASS') return `<span class=\"text-pass\">✅ ${value}% Pass</span>`;
+    if (result === 'FAIL') return `<span class=\"text-fail\">❌ ${value}% Fail</span>`;
+    if (result === 'PENDING') return `<span class=\"text-pending\">⏳ Pending</span>`;
+    return `<span class=\"text-na\">➖ N/A</span>`;
 }
 
 function formatDate(dateStr) {
@@ -707,141 +967,138 @@ document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
 });
 
 // Init Charts for Analytics View
-function initCharts() {
-    const ratioCtx = document.getElementById('ratioChart');
-    const trendCtx = document.getElementById('trendChart');
-    const vendorCtx = document.getElementById('vendorChart');
+async function initCharts() {
+    try {
+        const res = await fetch(buildUrlWithDateFilters('/dashboard/analytics'));
+        if (!res.ok) return;
+        const responseData = await res.json();
+        const data = responseData.data;
 
-    // Shared tooltip configuration
-    const tooltipOptions = {
-        backgroundColor: 'rgba(252, 252, 249, 0.95)',
-        titleColor: '#36453b',
-        bodyColor: '#36453b',
-        borderColor: '#e8e8e3',
-        borderWidth: 1,
-        padding: 12,
-        boxPadding: 6,
-        usePointStyle: true,
-        titleFont: { family: 'Inter', size: 13, weight: '600' },
-        bodyFont: { family: 'Inter', size: 12 }
-    };
+        const elFg = document.getElementById('analytics-fg-month');
+        if (elFg) elFg.textContent = data.metrics.fgInMonth;
+        
+        const elSi = document.getElementById('analytics-waiting-si');
+        if (elSi) elSi.textContent = data.metrics.waitingSI;
+        
+        const el3w = document.getElementById('analytics-over-3w');
+        if (el3w) el3w.textContent = data.metrics.over3Weeks;
+        
+        const elExp = document.getElementById('analytics-exported');
+        if (elExp) elExp.textContent = data.metrics.exported;
 
-    if(ratioCtx && !window.ratioChartInstance) {
-        window.ratioChartInstance = new Chart(ratioCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Pass (<15%)', 'Fail (>=15%)'],
-                datasets: [{
-                    data: [85, 15],
-                    backgroundColor: ['#e8efe9', '#fae3e3'],
-                    borderColor: ['#456b49', '#b54242'],
-                    borderWidth: 1,
-                    hoverOffset: 4
-                }]
-            },
-            options: { 
-                cutout: '78%', 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                animation: { duration: 2500, easing: 'easeOutQuart' },
-                plugins: { 
-                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { family: 'Inter' } } },
-                    tooltip: tooltipOptions
-                } 
-            }
-        });
-    }
+        const ratioCtx = document.getElementById('ratioChart');
+        const trendCtx = document.getElementById('trendChart');
+        const vendorCtx = document.getElementById('vendorChart');
 
-    if(trendCtx && !window.trendChartInstance) {
-        // Create a beautiful gradient for the line chart
-        const ctx = trendCtx.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(181, 106, 66, 0.3)');
-        gradient.addColorStop(1, 'rgba(252, 232, 219, 0.0)');
+        // Shared tooltip configuration
+        const tooltipOptions = {
+            backgroundColor: 'rgba(252, 252, 249, 0.95)',
+            titleColor: '#36453b',
+            bodyColor: '#36453b',
+            borderColor: '#e8e8e3',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            usePointStyle: true,
+            titleFont: { family: 'Inter', size: 13, weight: '600' },
+            bodyFont: { family: 'Inter', size: 12 }
+        };
 
-        window.trendChartInstance = new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Avg Moisture %',
-                    data: [12.4, 13.1, 14.5, 12.8, 11.2, 12.0],
-                    borderColor: '#b56a42',
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#b56a42',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                animation: { 
-                    duration: 3000, 
-                    easing: 'easeOutExpo',
-                    y: { from: 10 } // Animate up from bottom axis
+        if(ratioCtx) {
+            if (window.ratioChartInstance) window.ratioChartInstance.destroy();
+            window.ratioChartInstance = new Chart(ratioCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pass (<15%)', 'Fail (>=15%)'],
+                    datasets: [{
+                        data: [data.charts.ratio.pass, data.charts.ratio.fail],
+                        backgroundColor: ['#e8efe9', '#fae3e3'],
+                        borderColor: ['#456b49', '#b54242'],
+                        borderWidth: 1,
+                        hoverOffset: 4
+                    }]
                 },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: tooltipOptions 
-                }, 
-                scales: { 
-                    y: { 
-                        beginAtZero: false, 
-                        min: 10, 
-                        max: 18,
-                        grid: { color: '#f0f0ea', drawBorder: false },
-                        ticks: { font: { family: 'Inter' } }
-                    },
-                    x: {
-                        grid: { display: false, drawBorder: false },
-                        ticks: { font: { family: 'Inter' } }
-                    }
-                } 
-            }
-        });
-    }
+                options: { 
+                    cutout: '78%', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 2500, easing: 'easeOutQuart' },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { family: 'Inter' } } },
+                        tooltip: tooltipOptions
+                    } 
+                }
+            });
+        }
 
-    if(vendorCtx && !window.vendorChartInstance) {
-        window.vendorChartInstance = new Chart(vendorCtx, {
-            type: 'bar',
-            data: {
-                labels: ['NA', 'EMEA', 'APAC', 'LATAM'],
-                datasets: [{
-                    label: 'Reject Rate (%)',
-                    data: [8.5, 5.2, 3.1, 2.0],
-                    backgroundColor: '#fae3e3',
-                    borderColor: '#b54242',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    barPercentage: 0.6
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                animation: { duration: 2500, easing: 'easeOutElastic' },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: tooltipOptions
-                }, 
-                scales: { 
-                    y: { 
-                        beginAtZero: true,
-                        grid: { color: '#f0f0ea', drawBorder: false },
-                        ticks: { font: { family: 'Inter' } }
-                    },
-                    x: {
-                        grid: { display: false, drawBorder: false },
-                        ticks: { font: { family: 'Inter' } }
-                    }
-                } 
-            }
-        });
+        if(trendCtx) {
+            if (window.trendChartInstance) window.trendChartInstance.destroy();
+            const ctx = trendCtx.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(181, 106, 66, 0.3)');
+            gradient.addColorStop(1, 'rgba(252, 232, 219, 0.0)');
+
+            window.trendChartInstance = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: data.charts.trend.labels,
+                    datasets: [{
+                        label: 'Avg Moisture %',
+                        data: data.charts.trend.data,
+                        borderColor: '#b56a42',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#b56a42',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 1500, easing: 'easeOutExpo' },
+                    plugins: { legend: { display: false }, tooltip: tooltipOptions },
+                    scales: { 
+                        y: { beginAtZero: false, grid: { color: '#f0f0ea', drawBorder: false }, ticks: { font: { family: 'Inter' } } },
+                        x: { grid: { display: false, drawBorder: false }, ticks: { font: { family: 'Inter' } } }
+                    } 
+                }
+            });
+        }
+
+        if(vendorCtx) {
+            if (window.vendorChartInstance) window.vendorChartInstance.destroy();
+            window.vendorChartInstance = new Chart(vendorCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.charts.market.labels,
+                    datasets: [{
+                        label: 'Fails / Rejected',
+                        data: data.charts.market.data,
+                        backgroundColor: '#fae3e3',
+                        borderColor: '#b54242',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    animation: { duration: 1500, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false }, tooltip: tooltipOptions },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { color: '#f0f0ea', drawBorder: false }, ticks: { font: { family: 'Inter' } } },
+                        x: { grid: { display: false, drawBorder: false }, ticks: { font: { family: 'Inter' } } }
+                    } 
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load analytics', err);
     }
 }
 
@@ -879,4 +1136,54 @@ function exportExcel() {
     if (currentFilter) url += 'status=' + currentFilter + '&';
     if (currentSearch) url += 'search=' + currentSearch;
     window.open(url, '_blank');
+}
+
+// Marquee Rendering
+function renderMarquee(data) {
+    const ticker = document.getElementById('marquee-ticker');
+    if (!ticker) return;
+    
+    if (!data || data.length === 0) {
+        ticker.innerHTML = '<span style="color: #a0aec0; font-size: 0.75rem;">No recent activity</span>';
+        return;
+    }
+    
+    // Grab top 10 most "active" or recent items
+    // For now, let's just grab the first 10 from the data array
+    const recentItems = data.slice(0, 15);
+    
+    // Status color mapping for badge
+    const badgeColors = {
+        'WAITING_SI': { bg: '#fff3cd', color: '#856404' },
+        'WATCHING': { bg: '#cce5ff', color: '#004085' },
+        'ALERTED': { bg: '#f8d7da', color: '#721c24' },
+        'EXPORTED': { bg: '#e2e3e5', color: '#383d41' },
+        'CHECKED': { bg: '#d4edda', color: '#155724' },
+        'OVERDUE': { bg: '#f8d7da', color: '#721c24' }
+    };
+
+    let html = '';
+    recentItems.forEach(po => {
+        const style = badgeColors[po.status] || { bg: '#e2e3e5', color: '#383d41' };
+        
+        let articleText = (po.article || '') + (po.market ? ` • ${po.market}` : '');
+        if (articleText.length > 30) articleText = articleText.substring(0, 30) + '...';
+        
+        html += `
+            <div class="marquee-item">
+                <span class="marquee-badge" style="background: ${style.bg}; color: ${style.color};">
+                    <i data-lucide="activity" style="width:10px; height:10px; margin-right:2px; display:inline-block;"></i>${po.status}
+                </span>
+                <span><b>${po.po_number}</b> - ${articleText}</span>
+                <span class="marquee-time">${po.age_days ? po.age_days + ' days' : 'New'}</span>
+            </div>
+        `;
+    });
+    
+    // Duplicate the content to make the scrolling smoother (if it wraps)
+    ticker.innerHTML = html + html;
+    
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }

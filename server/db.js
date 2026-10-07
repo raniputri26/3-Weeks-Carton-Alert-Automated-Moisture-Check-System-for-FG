@@ -38,9 +38,10 @@ async function initDB() {
       start_in_fg DATE,
       po_closing_date DATE,
       si_date DATE,                    -- ⭐ TRIGGER: countdown 21 hari mulai dari sini
+      export_date DATE,
       total_pairs INTEGER,
       total_ctn INTEGER,
-      status TEXT DEFAULT 'WAITING_SI', -- WAITING_SI / WATCHING / ALERTED / CHECKED / SKIPPED
+      status TEXT DEFAULT 'WAITING_SI', -- WAITING_SI / WATCHING / ALERTED / CHECKED / SKIPPED / EXPORTED
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -78,7 +79,22 @@ async function initDB() {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS daily_stats_snapshot (
+      date_str TEXT PRIMARY KEY,
+      stats_json TEXT
+    );
   `);
+
+  try {
+    // Add export_date column for existing databases (will throw error if already exists)
+    db.run(`ALTER TABLE po_data ADD COLUMN export_date DATE;`);
+    console.log('Migrated DB: Added export_date column');
+  } catch (e) {}
+
+  try {
+    db.run(`CREATE TABLE IF NOT EXISTS daily_stats_snapshot (date_str TEXT PRIMARY KEY, stats_json TEXT);`);
+  } catch (e) {}
 
   saveDatabase();
   console.log('✅ Database initialized at', config.DB_PATH);
@@ -136,10 +152,10 @@ function upsertPO(poData) {
   return queryRun(`
     INSERT INTO po_data (
       po_number, article, market, customer, warehouse, 
-      qty_order, start_in_fg, po_closing_date, si_date, status
+      qty_order, start_in_fg, po_closing_date, si_date, export_date, status
     ) VALUES (
       ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, ?
+      ?, ?, ?, ?, ?, ?
     )
     ON CONFLICT(po_number) DO UPDATE SET
       article = excluded.article,
@@ -148,10 +164,12 @@ function upsertPO(poData) {
       warehouse = excluded.warehouse,
       qty_order = excluded.qty_order,
       start_in_fg = excluded.start_in_fg,
-      po_closing_date = excluded.po_closing_date
+      po_closing_date = excluded.po_closing_date,
+      export_date = excluded.export_date,
+      status = excluded.status
   `, [
     poData.po_number, poData.article, poData.market, poData.customer, poData.warehouse,
-    poData.qty_order, poData.start_in_fg, poData.po_closing_date, poData.si_date, poData.status
+    poData.qty_order, poData.start_in_fg, poData.po_closing_date, poData.si_date, poData.export_date, poData.status
   ]);
 }
 
@@ -181,11 +199,16 @@ function getPOsByStatus(status) {
 
 function getWatchingPOsReadyForAlert() {
   return queryAll(`
-    SELECT * FROM po_data 
-    WHERE status = 'WATCHING' 
-    AND si_date IS NOT NULL 
-    AND si_date != ''
-    AND (julianday('now') - julianday(si_date)) >= ?
+    SELECT p.*, 
+      (SELECT COUNT(*) FROM moisture_checks mc WHERE mc.po_number = p.po_number) as check_count
+    FROM po_data p
+    WHERE p.status IN ('WATCHING', 'CHECKED')
+    AND p.si_date IS NOT NULL 
+    AND p.si_date != ''
+    AND (p.export_date IS NULL OR p.export_date = '')
+    AND (julianday('now') - julianday(p.si_date)) >= (
+      ((SELECT COUNT(*) FROM moisture_checks mc WHERE mc.po_number = p.po_number) + 1) * ?
+    )
   `, [config.ALERT_DAYS]);
 }
 
@@ -232,8 +255,26 @@ function getCartonsForPO(po_number) {
 // Dashboard Functions
 // ──────────────────────────────────────
 
-function getDashboardStats() {
-  const rows = queryAll(`SELECT status, COUNT(*) as count FROM po_data GROUP BY status`);
+function getDashboardStats(filterParams = {}) {
+  let dateFilter = "";
+  const type = filterParams.type || ''; 
+  if (type === 'DAY') {
+      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
+  } else if (type === 'WEEK') {
+      dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
+  } else if (type === 'MONTH') {
+      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
+  } else if (type === 'RANGE') {
+      const start = filterParams.start;
+      const end = filterParams.end;
+      if (start && end) {
+          const safeStart = start.replace(/'/g, '');
+          const safeEnd = end.replace(/'/g, '');
+          dateFilter = ` AND start_in_fg >= '${safeStart}' AND start_in_fg <= '${safeEnd} 23:59:59' `;
+      }
+  }
+
+  const rows = queryAll(`SELECT status, COUNT(*) as count FROM po_data WHERE 1=1 ${dateFilter} GROUP BY status`);
   const stats = {
     TOTAL: 0,
     WAITING_SI: 0,
@@ -241,7 +282,8 @@ function getDashboardStats() {
     ALERTED: 0,
     CHECKED: 0,
     OVERDUE: 0,
-    SKIPPED: 0
+    SKIPPED: 0,
+    EXPORTED: 0
   };
   
   for (const row of rows) {
@@ -252,7 +294,82 @@ function getDashboardStats() {
   return stats;
 }
 
-function getAllPOs(statusFilter = null, searchTerm = null) {
+function snapshotCurrentStats() {
+  const stats = getDashboardStats();
+  // Get date in local timezone YYYY-MM-DD
+  const today = new Date();
+  const offset = today.getTimezoneOffset() * 60000;
+  const dateStr = new Date(today.getTime() - offset).toISOString().split('T')[0];
+  
+  queryRun(`
+    INSERT INTO daily_stats_snapshot (date_str, stats_json) VALUES (?, ?)
+    ON CONFLICT(date_str) DO UPDATE SET stats_json = excluded.stats_json
+  `, [dateStr, JSON.stringify(stats)]);
+}
+
+function getTrendStats(query = {}) {
+  const current = getDashboardStats(query);
+  
+  const today = new Date();
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() - 7);
+  const offset = targetDate.getTimezoneOffset() * 60000;
+  const targetStr = new Date(targetDate.getTime() - offset).toISOString().split('T')[0];
+  
+  let pastRow = queryGet(`
+    SELECT * FROM daily_stats_snapshot 
+    WHERE date_str <= ? 
+    ORDER BY date_str DESC LIMIT 1
+  `, [targetStr]);
+  
+  if (!pastRow) {
+    pastRow = queryGet(`SELECT * FROM daily_stats_snapshot ORDER BY date_str ASC LIMIT 1`);
+  }
+  
+  let trend = {
+    TOTAL: 0, WAITING_SI: 0, WATCHING: 0, ALERTED: 0, CHECKED: 0, OVERDUE: 0, EXPORTED: 0
+  };
+  
+  if (pastRow) {
+    try {
+      const pastStats = JSON.parse(pastRow.stats_json);
+      for (const key in trend) {
+        const curVal = current[key] || 0;
+        const pastVal = pastStats[key] || 0;
+        if (pastVal === 0) {
+           trend[key] = curVal > 0 ? 100 : 0;
+        } else {
+           trend[key] = Math.round(((curVal - pastVal) / pastVal) * 100);
+        }
+      }
+    } catch(e) {}
+  }
+  
+  // Implicitly snapshot the stats whenever they are fetched to ensure we have data for tomorrow
+  snapshotCurrentStats();
+  
+  return { current, trend };
+}
+
+function getAllPOs(statusFilter = null, searchTerm = null, filterParams = {}) {
+  let dateFilter = "";
+  const type = filterParams.type || ''; 
+  if (type === 'DAY') {
+      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
+  } else if (type === 'WEEK') {
+      dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
+  } else if (type === 'MONTH') {
+      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
+  } else if (type === 'RANGE') {
+      const start = filterParams.start;
+      const end = filterParams.end;
+      if (start && end) {
+          const safeStart = start.replace(/'/g, '');
+          const safeEnd = end.replace(/'/g, '');
+          dateFilter = ` AND start_in_fg >= '${safeStart}' AND start_in_fg <= '${safeEnd} 23:59:59' `;
+      }
+  }
+
   let query = `
     SELECT p.*, 
       (SELECT COUNT(*) FROM cartons c WHERE c.po_number = p.po_number) as total_ctn_db,
@@ -340,6 +457,8 @@ module.exports = {
   saveMoistureCheck,
   getCartonsForPO,
   getDashboardStats,
+  getTrendStats,
+  snapshotCurrentStats,
   getAllPOs,
   getPODetail,
   getSystemConfig,

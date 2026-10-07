@@ -68,14 +68,18 @@ function parseFile(filePath) {
         qty_order: parseInt(row['QTY ORDER']) || null,
         start_in_fg: parseExcelDate(row['START IN FG']),
         si_date: parseExcelDate(row['SI DATE']),
+        export_date: parseExcelDate(row['EXPORT DATE']),
         po_closing_date: parseExcelDate(row['PO# CLOSING DATE']),
         cartons: []
       };
     }
     
-    // Also update SI DATE if this row has it and existing group doesn't
+    // Also update SI DATE and EXPORT DATE if this row has it and existing group doesn't
     if (!poGroups[poStr].si_date && row['SI DATE']) {
       poGroups[poStr].si_date = parseExcelDate(row['SI DATE']);
+    }
+    if (!poGroups[poStr].export_date && row['EXPORT DATE']) {
+      poGroups[poStr].export_date = parseExcelDate(row['EXPORT DATE']);
     }
     
     const ctn = row['NO. CTN'] || row['NO.CTN'] || row['CTN'];
@@ -91,8 +95,9 @@ function parseFile(filePath) {
   for (const po_number in poGroups) {
     const data = poGroups[po_number];
     
-    // Determine initial status based on si_date
+    // Determine initial status based on si_date and export_date
     let status = data.si_date ? 'WATCHING' : 'WAITING_SI';
+    if (data.export_date) status = 'EXPORTED';
     
     // Check if PO already exists in DB
     const existing = db.getPODetail(po_number);
@@ -109,6 +114,7 @@ function parseFile(filePath) {
         start_in_fg: data.start_in_fg,
         po_closing_date: data.po_closing_date,
         si_date: data.si_date,
+        export_date: data.export_date,
         status: status
       });
       stats.newPOs++;
@@ -119,8 +125,11 @@ function parseFile(filePath) {
         stats.updatedSIDates++;
       }
       
-      // Update other metadata (but preserve existing status unless WAITING_SI → WATCHING)
-      const newStatus = (existing.status === 'WAITING_SI' && data.si_date) ? 'WATCHING' : existing.status;
+      // Update other metadata (but preserve existing status unless WAITING_SI → WATCHING, or if EXPORT DATE comes in)
+      let newStatus = existing.status;
+      if (existing.status === 'WAITING_SI' && data.si_date) newStatus = 'WATCHING';
+      if (data.export_date) newStatus = 'EXPORTED';
+
       db.upsertPO({
         po_number: data.po_number,
         article: data.article,
@@ -131,6 +140,7 @@ function parseFile(filePath) {
         start_in_fg: data.start_in_fg,
         po_closing_date: data.po_closing_date,
         si_date: data.si_date || existing.si_date,
+        export_date: data.export_date || existing.export_date,
         status: newStatus
       });
     }

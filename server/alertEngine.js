@@ -36,8 +36,9 @@ async function checkAndSendAlerts() {
     const cartons = db.getCartonsForPO(po.po_number);
     const days = calculateDays(po.si_date);
     const weeks = Math.floor(days / 7);
+    const cycleText = po.check_count > 0 ? ` (CYCLE ${po.check_count + 1})` : '';
     
-    message = `🔔 *MOISTURE CHECK ALERT*
+    message = `🔔 *MOISTURE CHECK ALERT${cycleText}*
 ━━━━━━━━━━━━━━━━━━━━━━━
 
 📋 *PO#:* ${po.po_number}
@@ -69,8 +70,9 @@ ${cartons.join(', ')}
     posReady.forEach((po, index) => {
       const cartons = db.getCartonsForPO(po.po_number);
       const days = calculateDays(po.si_date);
+      const cycleInfo = po.check_count > 0 ? ` (Cycle ${po.check_count + 1})` : '';
       
-      message += `${index + 1}️⃣ *PO#:* ${po.po_number} | ${po.article || '-'} | ${po.market || '-'}
+      message += `${index + 1}️⃣ *PO#:* ${po.po_number}${cycleInfo} | ${po.article || '-'} | ${po.market || '-'}
    📦 ${cartons.length} CTN: ${cartons.slice(0, 10).join(', ')}${cartons.length > 10 ? '...' : ''}
    📅 FG In: ${po.start_in_fg ? formatDate(po.start_in_fg) : '-'}
    📅 SI Date: ${formatDate(po.si_date)} (${days} hari)\n\n`;
@@ -89,7 +91,7 @@ Threshold: < 15% PASS ✅ | ≥ 15% FAIL ❌
   if (success) {
     posReady.forEach(po => {
       db.updatePOStatus(po.po_number, 'ALERTED');
-      db.logAlert(po.po_number, 'FIRST');
+      db.logAlert(po.po_number, po.check_count > 0 ? `CYCLE_${po.check_count + 1}` : 'FIRST');
     });
     console.log('Alerts sent and logged successfully.');
   } else {

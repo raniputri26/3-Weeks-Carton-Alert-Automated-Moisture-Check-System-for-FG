@@ -4,10 +4,12 @@ echo ====================================================
 echo        Menyalakan FG Moisture Alert System...
 echo ====================================================
 echo.
-cd /d "c:\Digital System\Finish Good Moisture Alert System"
 
-:: Buka browser secara otomatis ke IP Network
-start http://10.20.32.198:3000
+:: Pindah ke direktori tempat file .bat ini berada secara otomatis
+cd /d "%~dp0"
+
+:: Buka browser dengan jeda 3 detik agar server sempat menyala penuh
+start /B cmd /c "timeout /t 3 >nul && start http://localhost:3000"
 
 :: Jalankan server Node.js
 npm run dev
