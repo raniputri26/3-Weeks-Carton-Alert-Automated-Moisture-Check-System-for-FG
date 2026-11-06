@@ -21,6 +21,9 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // Also serve img/ directory for logos
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
 
+// Serve uploads directory for QC images
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
 // Setup routes
 app.use('/api/upload', uploadRoutes);
 app.use('/api/dashboard', dashboardRoutes);

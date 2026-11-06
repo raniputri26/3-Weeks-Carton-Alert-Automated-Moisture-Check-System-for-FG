@@ -11,17 +11,24 @@ function parseExcelDate(excelDate) {
     return d.toISOString().split('T')[0];
   }
   if (typeof excelDate === 'string') {
-    let cleanStr = excelDate.replace(/PASSED/i, '').trim();
-    if (/^\d{1,2}\/\d{1,2}$/.test(cleanStr)) {
-      cleanStr += '/' + new Date().getFullYear();
+    let cleanStr = excelDate.trim();
+    if (cleanStr === '') return null;
+
+    const match = cleanStr.match(/(\d{1,2})\/(\d{1,2})/);
+    if (match) {
+      cleanStr = match[1] + '/' + match[2] + '/' + new Date().getFullYear();
+    } else {
+      cleanStr = cleanStr.replace(/[a-zA-Z]+/g, '').trim();
     }
+
     const d = new Date(cleanStr);
     if (!isNaN(d.getTime())) {
+      if (d.getFullYear() < 2020) d.setFullYear(new Date().getFullYear());
       const offset = d.getTimezoneOffset() * 60000;
       const localD = new Date(d.getTime() - offset);
       return localD.toISOString().split('T')[0];
     }
-    return excelDate;
+    return null;
   }
   return null;
 }

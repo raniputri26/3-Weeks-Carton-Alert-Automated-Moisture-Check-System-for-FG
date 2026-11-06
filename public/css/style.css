@@ -597,20 +597,6 @@ button { font-family: inherit; }
     box-shadow: 0 15px 30px rgba(0,0,0,0.06) !important;
 }
 
-.horizontal-icon-wrap { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-.horizontal-stat-left span:last-child {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.horizontal-stat-card .stat-desc {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-}
-
 /* Marquee Ticker */
 .marquee-wrapper {
     width: 100%;
@@ -899,32 +885,134 @@ button { font-family: inherit; }
     text-align: center;
 }
 
-/* Recovered CSS */
+/* ================= STAT QUICK FILTER CARDS ================= */
+.stat-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    width: 100%;
+}
 
+.stat-filter-card,
 .horizontal-stat-card {
+    background: #ffffff;
+    border: 1px solid var(--c-border);
+    border-radius: 16px;
+    padding: 0.85rem 0.9rem 0.75rem 0.9rem;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 106px;
+    box-sizing: border-box;
+    position: relative;
+    user-select: none;
+}
+
+.stat-filter-card:hover,
+.horizontal-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+    border-color: #d1cec4;
+}
+
+.stat-filter-card.active,
+.horizontal-stat-card.active {
+    border-color: var(--c-olive);
+    box-shadow: 0 4px 14px rgba(54, 69, 59, 0.12);
+    background: #ffffff;
+}
+
+.stat-filter-card.active::after,
+.horizontal-stat-card.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 18%;
+    right: 18%;
+    height: 3px;
+    background: var(--c-olive);
+    border-radius: 3px 3px 0 0;
+}
+
+.stat-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-md);
-    background: white;
+    margin-bottom: 0.45rem;
+}
+
+.stat-card-icon,
+.horizontal-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-card-icon i,
+.stat-card-icon svg,
+.horizontal-icon-wrap i,
+.horizontal-icon-wrap svg {
+    width: 16px;
+    height: 16px;
+}
+
+.stat-card-value,
+.horizontal-stat-badge {
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-family: var(--font-sans);
     color: var(--c-text-main);
-    border: 1px solid var(--c-border);
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: var(--shadow-sm);
-    min-width: 140px;
-    flex: 1;
+    line-height: 1;
+    letter-spacing: -0.02em;
 }
-.horizontal-stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+
+.stat-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
-.horizontal-stat-card .stat-desc {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
+
+.stat-card-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--c-text-main);
+    line-height: 1.25;
+    white-space: normal;
+    word-break: normal;
+    overflow: visible;
+}
+
+.stat-card-desc,
+.stat-desc {
+    font-size: 0.6875rem;
+    color: #8b8a86;
+    line-height: 1.3;
+    font-weight: 400;
+    white-space: normal;
+    word-break: normal;
+    overflow: visible;
+    min-height: 2.6em;
+    padding-left: 0 !important;
+}
+
+@media (max-width: 1240px) {
+    .stat-cards-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .stat-cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .unified-filter-bar {

@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPOs();
     loadLastUploadInfo();
     setupEventListeners();
+    updateActiveFilterUI();
     
     // Auto refresh every 30 seconds
     setInterval(() => {
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
     els.filterSelect.addEventListener('change', (e) => {
         currentFilter = e.target.value;
+        updateActiveFilterUI();
         loadPOs();
     });
 
@@ -164,6 +166,56 @@ function setupEventListeners() {
         }
     }
 
+    // Export Date UI setup
+    const exportDateType = document.getElementById('export-date-type');
+    const exportContainerDay = document.getElementById('export-input-day-container');
+    const exportContainerWeek = document.getElementById('export-input-week-container');
+    const exportContainerMonth = document.getElementById('export-input-month-container');
+    const exportContainerRange = document.getElementById('export-date-inputs');
+    const exportValDay = document.getElementById('export-day-value');
+    const exportValWeek = document.getElementById('export-week-value');
+    const exportValMonth = document.getElementById('export-month-value');
+    const exportValStart = document.getElementById('export-start-date');
+    const exportValEnd = document.getElementById('export-end-date');
+
+    function updateExportDateUI() {
+        if (!exportDateType) return;
+        const v = exportDateType.value;
+        exportContainerDay.style.display = v === 'DAY' ? 'block' : 'none';
+        exportContainerWeek.style.display = v === 'WEEK' ? 'block' : 'none';
+        exportContainerMonth.style.display = v === 'MONTH' ? 'block' : 'none';
+        exportContainerRange.style.display = v === 'RANGE' ? 'flex' : 'none';
+
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        if (v === 'DAY' && exportValDay && !exportValDay.value) exportValDay.value = `${yyyy}-${mm}-${dd}`;
+        if (v === 'MONTH' && exportValMonth && !exportValMonth.value) exportValMonth.value = `${yyyy}-${mm}`;
+        if (v === 'WEEK' && exportValWeek && !exportValWeek.value) {
+            const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+            exportValWeek.value = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+        }
+    }
+
+    if (exportDateType) {
+        exportDateType.addEventListener('change', () => {
+            updateExportDateUI();
+            refreshAllData();
+        });
+    }
+    [exportValDay, exportValWeek, exportValMonth].forEach(el => {
+        if (el) el.addEventListener('change', refreshAllData);
+    });
+    if (exportValStart && exportValEnd) {
+        exportValStart.addEventListener('change', () => { if (exportValEnd.value) refreshAllData(); });
+        exportValEnd.addEventListener('change', () => { if (exportValStart.value) refreshAllData(); });
+    }
+
     if (dateType) {
         dateType.addEventListener('change', () => {
             updateDateUI();
@@ -182,6 +234,7 @@ function setupEventListeners() {
     
     // Init UI
     if (dateType) updateDateUI();
+    if (exportDateType) updateExportDateUI();
 } // Data Fetching
 
 function getWeekDateRange(year, week) {
@@ -201,6 +254,42 @@ function getWeekDateRange(year, week) {
         start: start.toISOString().split('T')[0],
         end: end.toISOString().split('T')[0]
     };
+}
+
+// Build URLSearchParams for the Export Date filter (prefixed with 'ex_')
+function buildExportDateParams() {
+    const params = new URLSearchParams();
+    const exportType = document.getElementById('export-date-type');
+    if (!exportType || !exportType.value) return params;
+
+    const v = exportType.value;
+    params.append('ex_type', v);
+
+    if (v === 'DAY') {
+        const el = document.getElementById('export-day-value');
+        if (el && el.value) params.append('ex_value', el.value);
+    } else if (v === 'MONTH') {
+        const el = document.getElementById('export-month-value');
+        if (el && el.value) params.append('ex_value', el.value);
+    } else if (v === 'WEEK') {
+        const el = document.getElementById('export-week-value');
+        if (el && el.value) {
+            const parts = el.value.split('-W');
+            if (parts.length === 2) {
+                const range = getWeekDateRange(parseInt(parts[0]), parseInt(parts[1]));
+                params.append('ex_start', range.start);
+                params.append('ex_end', range.end);
+            }
+        }
+    } else if (v === 'RANGE') {
+        const startEl = document.getElementById('export-start-date');
+        const endEl = document.getElementById('export-end-date');
+        if (startEl && startEl.value && endEl && endEl.value) {
+            params.append('ex_start', startEl.value);
+            params.append('ex_end', endEl.value);
+        }
+    }
+    return params;
 }
 
 function buildUrlWithDateFilters(basePath) {
@@ -237,6 +326,11 @@ function buildUrlWithDateFilters(basePath) {
             }
         }
     }
+
+    // Merge export date params
+    const exportParams = buildExportDateParams();
+    exportParams.forEach((val, key) => params.append(key, val));
+
     const q = params.toString();
     if (q) {
         url += (url.includes('?') ? '&' : '?') + q;
@@ -322,11 +416,16 @@ async function loadPOs(showLoading = true) {
     }
     
     try {
-        const query = new URLSearchParams();
-        if (currentFilter) query.append('status', currentFilter);
-        if (currentSearch) query.append('search', currentSearch);
+        // Build URL with date filters AND status/search
+        const baseUrl = buildUrlWithDateFilters('/dashboard/pos');
+        const extraParams = new URLSearchParams();
+        if (currentFilter) extraParams.append('status', currentFilter);
+        if (currentSearch) extraParams.append('search', currentSearch);
         
-        const res = await fetch(`${API_BASE}/dashboard/pos?${query.toString()}`);
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        const finalUrl = extraParams.toString() ? `${baseUrl}${separator}${extraParams.toString()}` : baseUrl;
+        
+        const res = await fetch(finalUrl);
         if (!res.ok) throw new Error('API Error');
         const responseData = await res.json();
         poDataList = responseData.data || [];
@@ -374,8 +473,8 @@ function renderPOTable() {
     const currentData = poDataList.slice(startIndex, endIndex);
 
     const mapStatus = {
-        'WAITING_SI': { cls: 'badge-gray', txt: 'Waiting SI', icon: 'clock' },
-        'WATCHING': { cls: 'badge-peach', txt: 'Watching', icon: 'eye' },
+        'WAITING_SI': { cls: 'badge-gray', txt: 'Before SI', icon: 'clock' },
+        'WATCHING': { cls: 'badge-peach', txt: 'After SI', icon: 'eye' },
         'ALERTED': { cls: 'badge-rose', txt: 'Alerted', icon: 'alert-circle' },
         'CHECKED': { cls: 'badge-blue', txt: 'Checked', icon: 'check-circle-2' },
         'OVERDUE': { cls: 'badge-rose', txt: 'Overdue', icon: 'x-circle' },
@@ -386,7 +485,13 @@ function renderPOTable() {
     // Render Dashboard Table
     els.tableBody.innerHTML = currentData.map((po) => {
         const s = mapStatus[po.status] || { cls: 'badge-gray', txt: po.status, icon: 'circle' };
-        const badge = `<span class="badge ${s.cls}"><i data-lucide="${s.icon}" style="width:14px; height:14px;"></i> ${s.txt}</span>`;
+        
+        let displayTxt = s.txt;
+        if (po.status === 'ALERTED' && po.check_count > 0) {
+            displayTxt = `Alerted (Cek ${po.check_count + 1})`;
+        }
+
+        const badge = `<span class="badge ${s.cls}"><i data-lucide="${s.icon}" style="width:14px; height:14px;"></i> ${displayTxt}</span>`;
         
         let moistureDisplay = '<span style="color:#8b8a86;">-</span>';
         if (po.moisture_result === 'PASS') moistureDisplay = `<span style="color:#456b49; font-weight:600; display:flex; align-items:center; gap:4px;"><i data-lucide="check" style="width:14px; height:14px;"></i> ${po.moisture_value}%</span>`;
@@ -436,7 +541,13 @@ function renderPOTable() {
     if (els.masterTableBody) {
         els.masterTableBody.innerHTML = currentData.map((po) => {
             const s = mapStatus[po.status] || { cls: 'badge-gray', txt: po.status, icon: 'circle' };
-            const badge = `<span class="badge ${s.cls}"><i data-lucide="${s.icon}" style="width:14px; height:14px;"></i> ${s.txt}</span>`;
+            
+            let displayTxt = s.txt;
+            if (po.status === 'ALERTED' && po.check_count > 0) {
+                displayTxt = `Alerted (Cek ${po.check_count + 1})`;
+            }
+
+            const badge = `<span class="badge ${s.cls}"><i data-lucide="${s.icon}" style="width:14px; height:14px;"></i> ${displayTxt}</span>`;
             
             let actionBtn = `<button class="btn-action" title="View Details" onclick="openDetailModal('${po.po_number}')"><i data-lucide="eye"></i></button>`;
             const currentUser = localStorage.getItem('currentUser');
@@ -568,9 +679,25 @@ async function handleMoistureSubmit(e) {
     const poNumber = els.mcPoNumber.value;
     const value = parseFloat(els.mcValue.value);
     const checkedBy = document.getElementById('mc-checked-by').value;
+    const checkDate = document.getElementById('mc-check-date')?.value;
     const remarks = document.getElementById('mc-remarks').value;
+    const imageInput = document.getElementById('mc-images');
 
-    const payload = { po_number: poNumber, checked_by: checkedBy, moisture_value: value, remarks };
+    const formData = new FormData();
+    formData.append('po_number', poNumber);
+    formData.append('checked_by', checkedBy);
+    if (checkDate) formData.append('check_date', checkDate);
+    formData.append('moisture_value', value);
+    formData.append('remarks', remarks);
+    
+    if (imageInput.files.length > 5) {
+        showToast('Maximum 5 images allowed', 'error');
+        return;
+    }
+    
+    for (let i = 0; i < imageInput.files.length; i++) {
+        formData.append('images', imageInput.files[i]);
+    }
 
     els.btnSubmitMc.disabled = true;
     els.btnSubmitMc.textContent = 'Submitting...';
@@ -578,8 +705,7 @@ async function handleMoistureSubmit(e) {
     try {
         const res = await fetch(`${API_BASE}/moisture-check`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: formData
         });
         
         const data = await res.json();
@@ -622,10 +748,56 @@ async function openMoistureModal(poNumber, event) {
     
     // Reset form
     els.moistureForm.reset();
+    const dateInput = document.getElementById('mc-check-date');
+    if (dateInput) {
+        const today = new Date();
+        const offset = today.getTimezoneOffset() * 60000;
+        dateInput.value = new Date(today.getTime() - offset).toISOString().split('T')[0];
+    }
+    
+    // Reset image input and preview
+    const imgInput = document.getElementById('mc-images');
+    const imgPreview = document.getElementById('mc-image-preview');
+    if (imgInput && imgPreview) {
+        imgInput.value = '';
+        imgPreview.innerHTML = '';
+        
+        // Remove old listener if exists, add new one
+        const newImgInput = imgInput.cloneNode(true);
+        imgInput.parentNode.replaceChild(newImgInput, imgInput);
+        
+        newImgInput.addEventListener('change', function(e) {
+            imgPreview.innerHTML = '';
+            const files = Array.from(e.target.files).slice(0, 5);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--c-border);';
+                    imgPreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
     updateMoisturePreview();
     
     els.moistureModal.classList.add('active');
 }
+
+window.openGallery = function(images) {
+    if (!images || images.length === 0) return;
+    const body = document.getElementById('upload-result-body');
+    body.innerHTML = `
+        <div style="display: flex; gap: 1rem; overflow-x: auto; padding: 1rem 0;">
+            ${images.map(img => `<img src="${img}" style="max-height: 400px; max-width: 100%; object-fit: contain; border-radius: 8px; border: 1px solid var(--c-border);" />`).join('')}
+        </div>
+    `;
+    document.querySelector('#uploadResultModal h2').textContent = 'Evidence Photos';
+    els.uploadResultModal.classList.add('active');
+};
 
 async function openDetailModal(poNumber) {
     els.detailModal.classList.add('active');
@@ -652,34 +824,48 @@ async function openDetailModal(poNumber) {
                             <th>Checker</th>
                             <th>Value</th>
                             <th>Result</th>
+                            <th>Evidence</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${po.checks.map(mc => `
+                        ${po.checks.map(mc => {
+                            let imagesArr = [];
+                            try { if (mc.images) imagesArr = JSON.parse(mc.images); } catch(e){}
+                            const evidenceHtml = imagesArr.length > 0 
+                                ? `<button class="btn-primary" style="padding:0.25rem 0.5rem; font-size:0.75rem; background:var(--c-olive); color:white; border-radius:4px;" onclick='openGallery(${JSON.stringify(imagesArr)})'>${imagesArr.length} Photos</button>`
+                                : '-';
+                            return `
                             <tr>
                                 <td>${formatDateTime(mc.check_date)}</td>
                                 <td>${mc.checked_by}</td>
                                 <td><strong style="color:var(--c-text-main)">${mc.moisture_value}%</strong></td>
                                 <td>${mc.result === 'PASS' ? '<span class="badge badge-sage">PASS</span>' : '<span class="badge badge-rose">FAIL</span>'}</td>
+                                <td>${evidenceHtml}</td>
                                 <td>${mc.remarks || '-'}</td>
                             </tr>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             `;
         }
 
         const mapStatus = {
-            'WAITING_SI': { cls: 'badge-gray', txt: 'Waiting SI' },
-            'WATCHING': { cls: 'badge-peach', txt: 'Watching' },
+            'WAITING_SI': { cls: 'badge-gray', txt: 'Before SI' },
+            'WATCHING': { cls: 'badge-peach', txt: 'After SI' },
             'ALERTED': { cls: 'badge-rose', txt: 'Alerted' },
             'CHECKED': { cls: 'badge-blue', txt: 'Checked' },
             'OVERDUE': { cls: 'badge-rose', txt: 'Overdue' },
             'SKIPPED': { cls: 'badge-gray', txt: 'Skipped' },
             'EXPORTED': { cls: 'badge-purple', txt: 'Exported' },
         };
-        const statusBadge = mapStatus[po.status] ? `<span class="badge ${mapStatus[po.status].cls}">${mapStatus[po.status].txt}</span>` : po.status;
+        let detailDisplayTxt = mapStatus[po.status] ? mapStatus[po.status].txt : po.status;
+        if (po.status === 'ALERTED' && po.checks && po.checks.length > 0) {
+            detailDisplayTxt = `Alerted (Cek ${po.checks.length + 1})`;
+        }
+        
+        const statusBadge = mapStatus[po.status] ? `<span class="badge ${mapStatus[po.status].cls}">${detailDisplayTxt}</span>` : po.status;
         const poStatus = mapStatus[po.status] || { cls: 'badge-gray', txt: po.status };
         const siDateStr = po.si_date ? formatDate(po.si_date) : '-';
 
@@ -849,8 +1035,8 @@ function closeModal(modalId) {
 // Helpers
 function getStatusBadge(status) {
     const map = {
-        'WAITING_SI': { cls: 'waiting', icon: '⏱️', text: 'Waiting SI' },
-        'WATCHING': { cls: 'watching', icon: '👁️', text: 'Watching' },
+        'WAITING_SI': { cls: 'waiting', icon: '⏱️', text: 'Before SI' },
+        'WATCHING': { cls: 'watching', icon: '👁️', text: 'After SI' },
         'ALERTED': { cls: 'alerted', icon: '⚠️', text: 'Alerted' },
         'CHECKED': { cls: 'checked', icon: '✅', text: 'Checked' },
         'OVERDUE': { cls: 'overdue', icon: '❌', text: 'Overdue' },
@@ -872,6 +1058,7 @@ function formatDate(dateStr) {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     if (isNaN(d)) return dateStr;
+    if (d.getFullYear() < 2020) d.setFullYear(new Date().getFullYear());
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
@@ -885,6 +1072,8 @@ function formatDateTime(d) {
 function calculateAge(siDateStr) {
     if (!siDateStr) return 0;
     const si = new Date(siDateStr);
+    if (isNaN(si)) return 0;
+    if (si.getFullYear() < 2020) si.setFullYear(new Date().getFullYear());
     const now = new Date();
     si.setHours(0,0,0,0);
     now.setHours(0,0,0,0);
@@ -1109,9 +1298,21 @@ function toggleFilter(status) {
         currentFilter = status;
     }
     if (els.filterSelect) els.filterSelect.value = currentFilter;
+    updateActiveFilterUI();
     loadPOs();
     const tbl = document.querySelector(".table-responsive") || document.querySelector("table");
     if(tbl) tbl.scrollIntoView({behavior: "smooth", block: "start"});
+}
+
+function updateActiveFilterUI() {
+    document.querySelectorAll('.stat-filter-card').forEach(card => {
+        const f = card.getAttribute('data-filter') ?? '';
+        if (f === currentFilter) {
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+        }
+    });
 }
 
 
@@ -1132,10 +1333,13 @@ async function triggerManualAlert() {
 }
 
 function exportExcel() {
-    let url = API_BASE + '/dashboard/export?';
-    if (currentFilter) url += 'status=' + currentFilter + '&';
-    if (currentSearch) url += 'search=' + currentSearch;
-    window.open(url, '_blank');
+    const baseUrl = buildUrlWithDateFilters('/dashboard/export');
+    const extraParams = new URLSearchParams();
+    if (currentFilter) extraParams.append('status', currentFilter);
+    if (currentSearch) extraParams.append('search', currentSearch);
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    const finalUrl = extraParams.toString() ? `${baseUrl}${separator}${extraParams.toString()}` : baseUrl;
+    window.open(finalUrl, '_blank');
 }
 
 // Marquee Rendering

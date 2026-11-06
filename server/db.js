@@ -72,6 +72,7 @@ async function initDB() {
       moisture_value REAL,
       result TEXT,
       remarks TEXT,
+      images TEXT,
       FOREIGN KEY (po_number) REFERENCES po_data(po_number)
     );
 
@@ -95,6 +96,53 @@ async function initDB() {
   try {
     db.run(`CREATE TABLE IF NOT EXISTS daily_stats_snapshot (date_str TEXT PRIMARY KEY, stats_json TEXT);`);
   } catch (e) {}
+
+  try {
+    db.run(`ALTER TABLE moisture_checks ADD COLUMN images TEXT;`);
+    console.log('Migrated DB: Added images column to moisture_checks');
+  } catch (e) {}
+
+  try {
+    // Auto-fix any corrupt 2001 dates caused by legacy string parsing
+    db.run(`
+      UPDATE po_data SET si_date = REPLACE(si_date, '2001-', '2026-') WHERE si_date LIKE '2001-%';
+      UPDATE po_data SET start_in_fg = REPLACE(start_in_fg, '2001-', '2026-') WHERE start_in_fg LIKE '2001-%';
+      UPDATE po_data SET po_closing_date = REPLACE(po_closing_date, '2001-', '2026-') WHERE po_closing_date LIKE '2001-%';
+      UPDATE po_data SET export_date = REPLACE(export_date, '2001-', '2026-') WHERE export_date LIKE '2001-%';
+    `);
+    console.log('✅ Migrated DB: Cleaned up legacy 2001 dates');
+  } catch (e) {}
+
+  try {
+    // Migration for backdating is removed to prevent affecting newly added Moisture 2 checks.
+    // Fix the accidentally backdated Moisture 2 check for H174564 (id 20)
+    db.run(`UPDATE moisture_checks SET check_date = '2026-10-08 09:00:00' WHERE id = 20 AND po_number = 'H174564'`);
+
+
+    // New migration for EXPORT DATE updates based on user screenshot
+    const exportUpdates = [
+      { po: 'C135238', date: '2026-10-06 00:00:00' },
+      { po: 'U146407', date: '2026-10-06 00:00:00' },
+      { po: 'U141252', date: '2026-10-05 00:00:00' },
+      { po: '7877610', date: '2026-10-06 00:00:00' },
+      { po: '7877604', date: '2026-10-06 00:00:00' },
+      { po: '7875319', date: '2026-10-07 00:00:00' },
+      { po: '7874735', date: '2026-10-02 00:00:00' }
+    ];
+    let exportUpdatesCount = 0;
+    exportUpdates.forEach(update => {
+      const existing = queryGet(`SELECT id FROM po_data WHERE po_number = ?`, [update.po]);
+      if (existing) {
+        db.run(`UPDATE po_data SET export_date = ?, status = 'EXPORTED' WHERE po_number = ?`, [update.date, update.po]);
+        exportUpdatesCount++;
+      }
+    });
+    if (exportUpdatesCount > 0) {
+      console.log(`✅ Migrated DB: Updated export date and EXPORTED status for ${exportUpdatesCount} POs`);
+    }
+  } catch (e) {
+    console.error('Error adjusting check dates:', e);
+  }
 
   saveDatabase();
   console.log('✅ Database initialized at', config.DB_PATH);
@@ -165,6 +213,11 @@ function upsertPO(poData) {
       qty_order = excluded.qty_order,
       start_in_fg = excluded.start_in_fg,
       po_closing_date = excluded.po_closing_date,
+      si_date = CASE 
+        WHEN (po_data.si_date IS NULL OR po_data.si_date = '' OR po_data.si_date < '2020') AND excluded.si_date IS NOT NULL 
+        THEN excluded.si_date 
+        ELSE po_data.si_date 
+      END,
       export_date = excluded.export_date,
       status = excluded.status
   `, [
@@ -189,7 +242,7 @@ function updateSIDate(po_number, si_date) {
   return queryRun(`
     UPDATE po_data 
     SET si_date = ?, status = 'WATCHING' 
-    WHERE po_number = ? AND (si_date IS NULL OR si_date = '')
+    WHERE po_number = ? AND (si_date IS NULL OR si_date = '' OR si_date < '2020')
   `, [si_date, po_number]);
 }
 
@@ -233,11 +286,19 @@ function logAlert(po_number, alert_type) {
 
 function saveMoistureCheck(data) {
   const result = data.moisture_value >= config.MOISTURE_THRESHOLD ? 'FAIL' : 'PASS';
+  let checkDate = data.check_date;
+  if (!checkDate) {
+    checkDate = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  } else if (checkDate.length === 10) {
+    checkDate += ' 09:00:00';
+  }
+  
+  const imagesJson = data.images && data.images.length > 0 ? JSON.stringify(data.images) : null;
   
   queryRun(`
-    INSERT INTO moisture_checks (po_number, checked_by, moisture_value, result, remarks)
-    VALUES (?, ?, ?, ?, ?)
-  `, [data.po_number, data.checked_by, data.moisture_value, result, data.remarks || '']);
+    INSERT INTO moisture_checks (po_number, checked_by, check_date, moisture_value, result, remarks, images)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `, [data.po_number, data.checked_by, checkDate, data.moisture_value, result, data.remarks || '', imagesJson]);
   
   updatePOStatus(data.po_number, 'CHECKED');
   
@@ -257,24 +318,66 @@ function getCartonsForPO(po_number) {
 
 function getDashboardStats(filterParams = {}) {
   let dateFilter = "";
-  const type = filterParams.type || ''; 
+  const type = filterParams.type || '';
+  const val = (filterParams.value || '').replace(/'/g, '');
+
   if (type === 'DAY') {
-      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
+      // val = 'YYYY-MM-DD' or fall back to today
+      const day = val || "strftime('%Y-%m-%d', 'now', 'localtime')";
+      dateFilter = val
+        ? ` AND start_in_fg LIKE '${day}%' `
+        : " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
   } else if (type === 'WEEK') {
-      dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
-  } else if (type === 'MONTH') {
-      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
-  } else if (type === 'RANGE') {
-      const start = filterParams.start;
-      const end = filterParams.end;
+      // WEEK uses start/end range computed on frontend
+      const start = (filterParams.start || '').replace(/'/g, '');
+      const end = (filterParams.end || '').replace(/'/g, '');
       if (start && end) {
-          const safeStart = start.replace(/'/g, '');
-          const safeEnd = end.replace(/'/g, '');
-          dateFilter = ` AND start_in_fg >= '${safeStart}' AND start_in_fg <= '${safeEnd} 23:59:59' `;
+          dateFilter = ` AND start_in_fg >= '${start}' AND start_in_fg <= '${end} 23:59:59' `;
+      } else {
+          dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
+      }
+  } else if (type === 'MONTH') {
+      // val = 'YYYY-MM' or fall back to current month
+      const month = val || "strftime('%Y-%m', 'now', 'localtime')";
+      dateFilter = val
+        ? ` AND start_in_fg LIKE '${month}%' `
+        : " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
+  } else if (type === 'RANGE') {
+      const start = (filterParams.start || '').replace(/'/g, '');
+      const end = (filterParams.end || '').replace(/'/g, '');
+      if (start && end) {
+          dateFilter = ` AND start_in_fg >= '${start}' AND start_in_fg <= '${end} 23:59:59' `;
       }
   }
 
-  const rows = queryAll(`SELECT status, COUNT(*) as count FROM po_data WHERE 1=1 ${dateFilter} GROUP BY status`);
+  // Build export_date filter from ex_ prefixed params
+  let exportDateFilter = "";
+  const exType = (filterParams.ex_type || '');
+  const exVal = (filterParams.ex_value || '').replace(/'/g, '');
+
+  if (exType === 'DAY') {
+      exportDateFilter = exVal
+        ? ` AND export_date LIKE '${exVal}%' `
+        : ` AND export_date LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' `;
+  } else if (exType === 'WEEK') {
+      const exStart = (filterParams.ex_start || '').replace(/'/g, '');
+      const exEnd = (filterParams.ex_end || '').replace(/'/g, '');
+      if (exStart && exEnd) {
+          exportDateFilter = ` AND export_date >= '${exStart}' AND export_date <= '${exEnd} 23:59:59' `;
+      }
+  } else if (exType === 'MONTH') {
+      exportDateFilter = exVal
+        ? ` AND export_date LIKE '${exVal}%' `
+        : ` AND export_date LIKE strftime('%Y-%m', 'now', 'localtime') || '%' `;
+  } else if (exType === 'RANGE') {
+      const exStart = (filterParams.ex_start || '').replace(/'/g, '');
+      const exEnd = (filterParams.ex_end || '').replace(/'/g, '');
+      if (exStart && exEnd) {
+          exportDateFilter = ` AND export_date >= '${exStart}' AND export_date <= '${exEnd} 23:59:59' `;
+      }
+  }
+
+  const rows = queryAll(`SELECT status, COUNT(*) as count FROM po_data WHERE 1=1 ${dateFilter} ${exportDateFilter} GROUP BY status`);
   const stats = {
     TOTAL: 0,
     WAITING_SI: 0,
@@ -287,9 +390,19 @@ function getDashboardStats(filterParams = {}) {
   };
   
   for (const row of rows) {
-    stats[row.status] = row.count;
+    if (row.status !== 'CHECKED') {
+      stats[row.status] = row.count;
+    }
     stats.TOTAL += row.count;
   }
+  
+  const checkedRow = queryGet(`
+    SELECT COUNT(DISTINCT mc.po_number) as checked_count 
+    FROM moisture_checks mc 
+    JOIN po_data p ON mc.po_number = p.po_number 
+    WHERE 1=1 ${dateFilter} ${exportDateFilter}
+  `);
+  stats.CHECKED = checkedRow ? checkedRow.checked_count : 0;
   
   return stats;
 }
@@ -353,20 +466,57 @@ function getTrendStats(query = {}) {
 
 function getAllPOs(statusFilter = null, searchTerm = null, filterParams = {}) {
   let dateFilter = "";
-  const type = filterParams.type || ''; 
+  const type = filterParams.type || '';
+  const val = (filterParams.value || '').replace(/'/g, '');
+
   if (type === 'DAY') {
-      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
+      dateFilter = val
+        ? ` AND start_in_fg LIKE '${val}%' `
+        : " AND start_in_fg LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' ";
   } else if (type === 'WEEK') {
-      dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
-  } else if (type === 'MONTH') {
-      dateFilter = " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
-  } else if (type === 'RANGE') {
-      const start = filterParams.start;
-      const end = filterParams.end;
+      const start = (filterParams.start || '').replace(/'/g, '');
+      const end = (filterParams.end || '').replace(/'/g, '');
       if (start && end) {
-          const safeStart = start.replace(/'/g, '');
-          const safeEnd = end.replace(/'/g, '');
-          dateFilter = ` AND start_in_fg >= '${safeStart}' AND start_in_fg <= '${safeEnd} 23:59:59' `;
+          dateFilter = ` AND start_in_fg >= '${start}' AND start_in_fg <= '${end} 23:59:59' `;
+      } else {
+          dateFilter = " AND start_in_fg >= date('now', '-7 days', 'localtime') ";
+      }
+  } else if (type === 'MONTH') {
+      dateFilter = val
+        ? ` AND start_in_fg LIKE '${val}%' `
+        : " AND start_in_fg LIKE strftime('%Y-%m', 'now', 'localtime') || '%' ";
+  } else if (type === 'RANGE') {
+      const start = (filterParams.start || '').replace(/'/g, '');
+      const end = (filterParams.end || '').replace(/'/g, '');
+      if (start && end) {
+          dateFilter = ` AND start_in_fg >= '${start}' AND start_in_fg <= '${end} 23:59:59' `;
+      }
+  }
+
+  // Build export_date filter from ex_ prefixed params
+  let exportDateFilter = "";
+  const exType = (filterParams.ex_type || '');
+  const exVal = (filterParams.ex_value || '').replace(/'/g, '');
+
+  if (exType === 'DAY') {
+      exportDateFilter = exVal
+        ? ` AND p.export_date LIKE '${exVal}%' `
+        : ` AND p.export_date LIKE strftime('%Y-%m-%d', 'now', 'localtime') || '%' `;
+  } else if (exType === 'WEEK') {
+      const exStart = (filterParams.ex_start || '').replace(/'/g, '');
+      const exEnd = (filterParams.ex_end || '').replace(/'/g, '');
+      if (exStart && exEnd) {
+          exportDateFilter = ` AND p.export_date >= '${exStart}' AND p.export_date <= '${exEnd} 23:59:59' `;
+      }
+  } else if (exType === 'MONTH') {
+      exportDateFilter = exVal
+        ? ` AND p.export_date LIKE '${exVal}%' `
+        : ` AND p.export_date LIKE strftime('%Y-%m', 'now', 'localtime') || '%' `;
+  } else if (exType === 'RANGE') {
+      const exStart = (filterParams.ex_start || '').replace(/'/g, '');
+      const exEnd = (filterParams.ex_end || '').replace(/'/g, '');
+      if (exStart && exEnd) {
+          exportDateFilter = ` AND p.export_date >= '${exStart}' AND p.export_date <= '${exEnd} 23:59:59' `;
       }
   }
 
@@ -375,15 +525,22 @@ function getAllPOs(statusFilter = null, searchTerm = null, filterParams = {}) {
       (SELECT COUNT(*) FROM cartons c WHERE c.po_number = p.po_number) as total_ctn_db,
       (SELECT MAX(a.sent_at) FROM alerts a WHERE a.po_number = p.po_number) as last_alert_date,
       (SELECT mc.moisture_value FROM moisture_checks mc WHERE mc.po_number = p.po_number ORDER BY mc.check_date DESC LIMIT 1) as moisture_value,
-      (SELECT mc.result FROM moisture_checks mc WHERE mc.po_number = p.po_number ORDER BY mc.check_date DESC LIMIT 1) as moisture_result
+      (SELECT mc.result FROM moisture_checks mc WHERE mc.po_number = p.po_number ORDER BY mc.check_date DESC LIMIT 1) as moisture_result,
+      (SELECT COUNT(*) FROM moisture_checks mc WHERE mc.po_number = p.po_number) as check_count
     FROM po_data p
     WHERE 1=1
+    ${dateFilter}
+    ${exportDateFilter}
   `;
   const params = [];
   
   if (statusFilter && statusFilter !== 'ALL') {
-    query += ` AND p.status = ?`;
-    params.push(statusFilter);
+    if (statusFilter === 'CHECKED') {
+      query += ` AND (SELECT COUNT(*) FROM moisture_checks mc WHERE mc.po_number = p.po_number) > 0`;
+    } else {
+      query += ` AND p.status = ?`;
+      params.push(statusFilter);
+    }
   }
   
   if (searchTerm) {
@@ -392,7 +549,17 @@ function getAllPOs(statusFilter = null, searchTerm = null, filterParams = {}) {
     params.push(term, term, term, term);
   }
   
-  query += ` ORDER BY p.id DESC`;
+  if (statusFilter === 'EXPORTED') {
+    query += ` ORDER BY p.export_date DESC, p.id DESC`;
+  } else if (statusFilter === 'WAITING_SI') {
+    query += ` ORDER BY p.start_in_fg DESC, p.id DESC`;
+  } else if (statusFilter === 'ALERTED' || statusFilter === 'OVERDUE') {
+    query += ` ORDER BY p.si_date ASC, p.id DESC`; // Oldest first for urgent alerts
+  } else if (statusFilter === 'ALL' || !statusFilter) {
+    query += ` ORDER BY COALESCE(p.export_date, p.si_date, p.start_in_fg) DESC, p.id DESC`;
+  } else {
+    query += ` ORDER BY p.si_date DESC, p.id DESC`;
+  }
   
   return queryAll(query, params);
 }

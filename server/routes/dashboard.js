@@ -70,7 +70,6 @@ router.post('/trigger-alerts', async (req, res) => {
   }
 });
 
-
 const xlsx = require('xlsx');
 
 router.get('/export', (req, res) => {
@@ -78,7 +77,7 @@ router.get('/export', (req, res) => {
     const status = req.query.status;
     const search = req.query.search ? req.query.search.toLowerCase() : '';
     
-    let pos = db.getAllPOs(status);
+    let pos = db.getAllPOs(status, null, req.query);
     
     if (search) {
       pos = pos.filter(po => 
